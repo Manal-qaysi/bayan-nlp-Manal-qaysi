@@ -1,0 +1,22 @@
+{
+  "nb03_classification": {
+    "notebook": "03_text_classification.ipynb",
+    "code_cell": 18,
+    "execution_count": null,
+    "repo_sha": "5d83b7de5efbb4864d2fd3e53ef0d790bb4f0557",
+    "saved_in_commit": {
+      "sha": "76720f008555f515f8c867d2c96152cb584b82fc",
+      "date": "2026-09-30"
+    }
+  },
+  "nb08_benchmark": {
+    "notebook": "08_optimization_serving.ipynb",
+    "code_cell": 18,
+    "execution_count": 22,
+    "repo_sha": "76720f008555f515f8c867d2c96152cb584b82fc",
+    "saved_in_commit": {
+      "sha": "51ce661e34082f4f59956828e344aa83b093a02f",
+      "date": "2026-09-30"
+    }
+  }
+}

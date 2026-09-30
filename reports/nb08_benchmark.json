@@ -1,0 +1,262 @@
+{
+  "benchmark": {
+    "adoption_decision": "KEEP_PYTORCH_FP32",
+    "artefact_role": "PROJECT_ARTIFACT",
+    "budget": {
+      "max_p95_ms": 100.0,
+      "max_quality_tax": 0.02,
+      "min_throughput_items_s": 20.0,
+      "target_device": "colab-cpu"
+    },
+    "budget_provenance": "STUDENT_DEFINED_BEFORE_MEASUREMENT",
+    "decision_scope": "PROJECT_BUDGET_DECISION",
+    "environment": {
+      "device": "cpu",
+      "onnx": "1.22.0",
+      "onnxruntime": "1.29.0",
+      "ort_provider": "CPUExecutionProvider",
+      "platform": "Linux-6.6.122+-x86_64-with-glibc2.39",
+      "python": "3.13.15",
+      "torch": "2.11.0+cpu"
+    },
+    "fp32_rollback": "Re-export from recorded MODEL_SOURCE; weights stay outside GitHub.",
+    "measurement": {
+      "boundary": "model_only_primary_and_pytorch_end_to_end_secondary",
+      "memory_method": "process RSS start and observed peak; approximate",
+      "repetitions": 30,
+      "warmup": 5
+    },
+    "onnx_dynamic_int8": {
+      "budget": {
+        "budget_met": false,
+        "latency_ok": false,
+        "quality_ok": false,
+        "throughput_ok": true
+      },
+      "model_only": {
+        "items_per_call": 8,
+        "max_ms": 200.560604,
+        "mean_ms": 169.22403633333334,
+        "min_ms": 119.660075,
+        "p50_ms": 179.01844599999998,
+        "p95_ms": 188.8481998,
+        "p99_ms": 197.31200892,
+        "repetitions": 30,
+        "rss_observed_delta_mb": 0.0,
+        "rss_peak_observed_mb": 2417.234375,
+        "rss_start_mb": 2417.234375,
+        "throughput_items_s": 47.274608107336455,
+        "warmup": 5
+      },
+      "parity": {
+        "max_abs_logits_diff": 1.3766056299209595,
+        "mean_abs_logits_diff": 0.33087921142578125,
+        "prediction_agreement": 0.5
+      },
+      "quality": 0.43452380952380953,
+      "quality_tax": 0.5654761904761905,
+      "sha256": "fc1d2eef8c58f03dbffee139e53ba589ad2be3fe3c0a68c593ec9dc7a747f88c",
+      "size_mib": 129.4454002380371,
+      "status": {
+        "attempted": true,
+        "available": true,
+        "error": null
+      }
+    },
+    "onnx_fp32": {
+      "budget": {
+        "budget_met": false,
+        "latency_ok": false,
+        "quality_ok": true,
+        "throughput_ok": true
+      },
+      "model_only": {
+        "items_per_call": 8,
+        "max_ms": 286.016475,
+        "mean_ms": 201.372178,
+        "min_ms": 177.630621,
+        "p50_ms": 184.54218450000002,
+        "p95_ms": 277.36879369999997,
+        "p99_ms": 283.51924324000004,
+        "repetitions": 30,
+        "rss_observed_delta_mb": 0.0,
+        "rss_peak_observed_mb": 2324.234375,
+        "rss_start_mb": 2324.234375,
+        "throughput_items_s": 39.72743444230911,
+        "warmup": 5
+      },
+      "p95_speedup_vs_pytorch": 1.3229672123710146,
+      "parity": {
+        "max_abs_logits_diff": 2.1457672119140625e-06,
+        "mean_abs_logits_diff": 7.185153663158417e-07,
+        "prediction_agreement": 1.0
+      },
+      "quality": 1.0,
+      "quality_tax": 0.0,
+      "sha256": "6cbf2dabbdd2b2578ab34ad3225ec61830aca2c6fcd0ce9bc66c77e053c94a4d",
+      "size_mib": 516.3483638763428
+    },
+    "pytorch_fp32": {
+      "end_to_end": {
+        "items_per_call": 8,
+        "max_ms": 386.61782,
+        "mean_ms": 255.49195646666666,
+        "min_ms": 220.755178,
+        "p50_ms": 232.8782825,
+        "p95_ms": 362.36808444999997,
+        "p99_ms": 379.87825944,
+        "repetitions": 30,
+        "rss_observed_delta_mb": 0.046875,
+        "rss_peak_observed_mb": 1184.1015625,
+        "rss_start_mb": 1184.0546875,
+        "throughput_items_s": 31.312140353208097,
+        "warmup": 5
+      },
+      "model_only": {
+        "items_per_call": 8,
+        "max_ms": 378.062411,
+        "mean_ms": 253.24253036666667,
+        "min_ms": 224.075195,
+        "p50_ms": 230.475932,
+        "p95_ms": 366.9498198,
+        "p99_ms": 375.12344776000003,
+        "repetitions": 30,
+        "rss_observed_delta_mb": 0.0,
+        "rss_peak_observed_mb": 1184.015625,
+        "rss_start_mb": 1184.015625,
+        "throughput_items_s": 31.590270356313773,
+        "warmup": 5
+      },
+      "parameter_size_mib": 516.2343902587891,
+      "quality": 1.0,
+      "quality_metric": "macro_f1_validation_full_workload",
+      "state_sha256": "7ce92da659de7da567bd67707e159df07099c4ba54fdf64c6fd3d44ab053ce72"
+    },
+    "result_label": "MEASURED",
+    "selected_for_service": "pytorch-fp32",
+    "warning": null,
+    "workload": {
+      "batch_size": 4,
+      "languages": [
+        "ar",
+        "en"
+      ],
+      "length": {
+        "configured_max_length": 16,
+        "max_tokens": 15,
+        "p50_tokens": 11.0,
+        "p95_tokens": 14.649999999999999,
+        "would_truncate": 0
+      },
+      "rows": 8,
+      "rows_measured_per_repetition": 8,
+      "sha256": "9b07010d0e607282b66a0a1b1096175fd6015a237577db26bf03366393e077d8"
+    }
+  },
+  "repo": "https://github.com/Manal-qaysi/bayan-nlp-Manal-qaysi",
+  "repo_sha": "76720f008555f515f8c867d2c96152cb584b82fc",
+  "service": {
+    "manifest": {
+      "artifact_sha256": "7ce92da659de7da567bd67707e159df07099c4ba54fdf64c6fd3d44ab053ce72",
+      "label_map": {
+        "0": "digital_service",
+        "1": "health",
+        "2": "permit",
+        "3": "transport"
+      },
+      "model_id": "bayan-topic-distilmbert (notebook 03 artefact)",
+      "model_version": "project-v1",
+      "preprocessing_version": "bayan-prep/1.0.0",
+      "runtime": "pytorch-fp32"
+    },
+    "tests": {
+      "arabic": 200,
+      "arabic_prediction": {
+        "confidence": 0.801291823387146,
+        "label": "health"
+      },
+      "canaries": [
+        {
+          "label": "digital_service",
+          "name": "arabic-digital_service",
+          "status": "PASS"
+        },
+        {
+          "label": "transport",
+          "name": "english-transport",
+          "status": "PASS"
+        }
+      ],
+      "empty_rejected": 422,
+      "english": 200,
+      "english_prediction": {
+        "confidence": 0.5702272653579712,
+        "label": "health"
+      },
+      "health": 200,
+      "too_long_rejected": 422,
+      "unsupported_language_rejected": 422
+    }
+  },
+  "training_meta": {
+    "labels": [
+      "digital_service",
+      "health",
+      "permit",
+      "transport"
+    ],
+    "max_length": 16,
+    "model_id": "distilbert/distilbert-base-multilingual-cased",
+    "preprocessing_version": "bayan-prep/1.0.0",
+    "repo_sha": "5d83b7de5efbb4864d2fd3e53ef0d790bb4f0557",
+    "selected_epoch": 9,
+    "training_mode": "partial_finetune_cpu"
+  },
+  "workload_rows": [
+    {
+      "example_id": "D-007",
+      "label": "digital_service",
+      "language": "ar"
+    },
+    {
+      "example_id": "D-008",
+      "label": "digital_service",
+      "language": "en"
+    },
+    {
+      "example_id": "D-017",
+      "label": "permit",
+      "language": "ar"
+    },
+    {
+      "example_id": "D-018",
+      "label": "permit",
+      "language": "en"
+    },
+    {
+      "example_id": "D-027",
+      "label": "health",
+      "language": "ar"
+    },
+    {
+      "example_id": "D-028",
+      "label": "health",
+      "language": "en"
+    },
+    {
+      "example_id": "D-037",
+      "label": "transport",
+      "language": "ar"
+    },
+    {
+      "example_id": "D-038",
+      "label": "transport",
+      "language": "en"
+    }
+  ],
+  "_provenance": {
+    "notebook": "08_optimization_serving.ipynb",
+    "code_cell": 18,
+    "execution_count": 22
+  }
+}

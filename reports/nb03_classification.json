@@ -1,0 +1,377 @@
+{
+  "behavioural": {
+    "by_perturbation": {
+      "diacritic": {
+        "pass_rate": 0.75,
+        "passed": 6,
+        "total": 8
+      },
+      "double_spaces": {
+        "pass_rate": 1.0,
+        "passed": 16,
+        "total": 16
+      },
+      "lowercase": {
+        "pass_rate": 1.0,
+        "passed": 8,
+        "total": 8
+      },
+      "tatweel": {
+        "pass_rate": 1.0,
+        "passed": 8,
+        "total": 8
+      },
+      "trailing_punctuation": {
+        "pass_rate": 0.875,
+        "passed": 14,
+        "total": 16
+      }
+    },
+    "overall": {
+      "pass_rate": 0.9285714285714286,
+      "passed": 52,
+      "total": 56
+    }
+  },
+  "data_sha256": "c50de92fdab1aa36b19cf4c0f6e31c0bc521f70d6690635e839d7ba9ec7e9a77",
+  "heads": {
+    "sentiment": {
+      "test": {
+        "baseline_accuracy": 1.0,
+        "baseline_macro_f1": 1.0,
+        "labels_in_truth": [
+          "negative",
+          "positive"
+        ],
+        "n": 8,
+        "transformer_accuracy": 0.5,
+        "transformer_macro_f1": 0.35555555555555557
+      },
+      "validation": {
+        "baseline_accuracy": 0.125,
+        "baseline_macro_f1": 0.07407407407407407,
+        "labels_in_truth": [
+          "negative",
+          "neutral"
+        ],
+        "n": 8,
+        "transformer_accuracy": 0.625,
+        "transformer_macro_f1": 0.6190476190476191
+      }
+    },
+    "topic": {
+      "test": {
+        "baseline_accuracy": 0.75,
+        "baseline_macro_f1": 0.7333333333333333,
+        "labels_in_truth": [
+          "digital_service",
+          "health",
+          "permit",
+          "transport"
+        ],
+        "n": 8,
+        "transformer_accuracy": 0.875,
+        "transformer_macro_f1": 0.8666666666666667
+      },
+      "validation": {
+        "baseline_accuracy": 0.75,
+        "baseline_macro_f1": 0.6666666666666666,
+        "labels_in_truth": [
+          "digital_service",
+          "health",
+          "permit",
+          "transport"
+        ],
+        "n": 8,
+        "transformer_accuracy": 1.0,
+        "transformer_macro_f1": 1.0
+      }
+    }
+  },
+  "length_evidence": {
+    "max_tokens": 16,
+    "mean_fertility": 1.7523065476190476,
+    "n": 32,
+    "p50_tokens": 11.0,
+    "p95_tokens": 15.0,
+    "truncation_rate": {
+      "128": 0.0,
+      "16": 0.0,
+      "24": 0.0,
+      "32": 0.0,
+      "48": 0.0,
+      "64": 0.0,
+      "96": 0.0
+    }
+  },
+  "max_length_choice": {
+    "max_length": 16,
+    "rule": "smallest candidate with truncation <= 0.0",
+    "truncation_rate": 0.0
+  },
+  "predictions": [
+    {
+      "example_id": "D-007",
+      "language": "ar",
+      "sentiment_baseline": "positive",
+      "sentiment_gold": "negative",
+      "sentiment_transformer": "negative",
+      "split": "validation",
+      "text": "لم يصل رمز التحقق للخدمة الرقمية",
+      "topic_baseline": "transport",
+      "topic_gold": "digital_service",
+      "topic_transformer": "digital_service"
+    },
+    {
+      "example_id": "D-008",
+      "language": "en",
+      "sentiment_baseline": "negative",
+      "sentiment_gold": "negative",
+      "sentiment_transformer": "negative",
+      "split": "validation",
+      "text": "The verification code did not arrive",
+      "topic_baseline": "transport",
+      "topic_gold": "digital_service",
+      "topic_transformer": "digital_service"
+    },
+    {
+      "example_id": "D-017",
+      "language": "ar",
+      "sentiment_baseline": "negative",
+      "sentiment_gold": "neutral",
+      "sentiment_transformer": "neutral",
+      "split": "validation",
+      "text": "كيف أجدد التصريح المنتهي",
+      "topic_baseline": "permit",
+      "topic_gold": "permit",
+      "topic_transformer": "permit"
+    },
+    {
+      "example_id": "D-018",
+      "language": "en",
+      "sentiment_baseline": "negative",
+      "sentiment_gold": "neutral",
+      "sentiment_transformer": "neutral",
+      "split": "validation",
+      "text": "How can I renew an expired permit",
+      "topic_baseline": "permit",
+      "topic_gold": "permit",
+      "topic_transformer": "permit"
+    },
+    {
+      "example_id": "D-027",
+      "language": "ar",
+      "sentiment_baseline": "negative",
+      "sentiment_gold": "neutral",
+      "sentiment_transformer": "negative",
+      "split": "validation",
+      "text": "أين أجد نتيجة الموعد الطبي",
+      "topic_baseline": "health",
+      "topic_gold": "health",
+      "topic_transformer": "health"
+    },
+    {
+      "example_id": "D-028",
+      "language": "en",
+      "sentiment_baseline": "negative",
+      "sentiment_gold": "neutral",
+      "sentiment_transformer": "neutral",
+      "split": "validation",
+      "text": "Where can I find my medical appointment result",
+      "topic_baseline": "health",
+      "topic_gold": "health",
+      "topic_transformer": "health"
+    },
+    {
+      "example_id": "D-037",
+      "language": "ar",
+      "sentiment_baseline": "negative",
+      "sentiment_gold": "neutral",
+      "sentiment_transformer": "negative",
+      "split": "validation",
+      "text": "تغير وقت وصول الحافلة",
+      "topic_baseline": "transport",
+      "topic_gold": "transport",
+      "topic_transformer": "transport"
+    },
+    {
+      "example_id": "D-038",
+      "language": "en",
+      "sentiment_baseline": "negative",
+      "sentiment_gold": "neutral",
+      "sentiment_transformer": "negative",
+      "split": "validation",
+      "text": "The bus arrival time has changed",
+      "topic_baseline": "transport",
+      "topic_gold": "transport",
+      "topic_transformer": "transport"
+    },
+    {
+      "example_id": "D-009",
+      "language": "ar",
+      "sentiment_baseline": "positive",
+      "sentiment_gold": "positive",
+      "sentiment_transformer": "neutral",
+      "split": "test",
+      "text": "الخدمة الإلكترونية واضحة وسريعة",
+      "topic_baseline": "digital_service",
+      "topic_gold": "digital_service",
+      "topic_transformer": "health"
+    },
+    {
+      "example_id": "D-010",
+      "language": "en",
+      "sentiment_baseline": "positive",
+      "sentiment_gold": "positive",
+      "sentiment_transformer": "positive",
+      "split": "test",
+      "text": "The online service is clear and fast",
+      "topic_baseline": "health",
+      "topic_gold": "digital_service",
+      "topic_transformer": "digital_service"
+    },
+    {
+      "example_id": "D-019",
+      "language": "ar",
+      "sentiment_baseline": "negative",
+      "sentiment_gold": "negative",
+      "sentiment_transformer": "negative",
+      "split": "test",
+      "text": "لم أجد رقم طلب التصريح",
+      "topic_baseline": "permit",
+      "topic_gold": "permit",
+      "topic_transformer": "permit"
+    },
+    {
+      "example_id": "D-020",
+      "language": "en",
+      "sentiment_baseline": "negative",
+      "sentiment_gold": "negative",
+      "sentiment_transformer": "neutral",
+      "split": "test",
+      "text": "I could not find the permit request number",
+      "topic_baseline": "permit",
+      "topic_gold": "permit",
+      "topic_transformer": "permit"
+    },
+    {
+      "example_id": "D-029",
+      "language": "ar",
+      "sentiment_baseline": "negative",
+      "sentiment_gold": "negative",
+      "sentiment_transformer": "positive",
+      "split": "test",
+      "text": "تم إلغاء موعد العيادة دون إشعار",
+      "topic_baseline": "health",
+      "topic_gold": "health",
+      "topic_transformer": "health"
+    },
+    {
+      "example_id": "D-030",
+      "language": "en",
+      "sentiment_baseline": "negative",
+      "sentiment_gold": "negative",
+      "sentiment_transformer": "negative",
+      "split": "test",
+      "text": "The clinic appointment was cancelled without notice",
+      "topic_baseline": "health",
+      "topic_gold": "health",
+      "topic_transformer": "health"
+    },
+    {
+      "example_id": "D-039",
+      "language": "ar",
+      "sentiment_baseline": "negative",
+      "sentiment_gold": "negative",
+      "sentiment_transformer": "positive",
+      "split": "test",
+      "text": "توقفت الحافلة قبل المحطة المطلوبة",
+      "topic_baseline": "transport",
+      "topic_gold": "transport",
+      "topic_transformer": "transport"
+    },
+    {
+      "example_id": "D-040",
+      "language": "en",
+      "sentiment_baseline": "negative",
+      "sentiment_gold": "negative",
+      "sentiment_transformer": "negative",
+      "split": "test",
+      "text": "The bus stopped before the requested station",
+      "topic_baseline": "permit",
+      "topic_gold": "transport",
+      "topic_transformer": "transport"
+    }
+  ],
+  "preprocessing_version": "bayan-prep/1.0.0",
+  "repo": "https://github.com/Manal-qaysi/bayan-nlp-Manal-qaysi",
+  "repo_sha": "5d83b7de5efbb4864d2fd3e53ef0d790bb4f0557",
+  "sentiment_training": {
+    "labels": [
+      "negative",
+      "neutral",
+      "positive"
+    ],
+    "selected_epoch": 6,
+    "steps": 72,
+    "validation_macro_f1": 0.6190476190476191
+  },
+  "split_report": {
+    "group_overlap": 0,
+    "groups": 20,
+    "labels": [
+      "digital_service",
+      "health",
+      "permit",
+      "transport"
+    ],
+    "rows": {
+      "test": 8,
+      "train": 24,
+      "validation": 8
+    }
+  },
+  "topic_run": {
+    "baseline_beaten_on_validation": true,
+    "baseline_test_macro_f1": 0.7333333333333333,
+    "baseline_validation_macro_f1": 0.6666666666666666,
+    "data_source": "project_repo_file",
+    "device": "cpu",
+    "epochs_run": 12,
+    "limitations": [
+      "synthetic tiny dataset",
+      "small validation set used for epoch selection",
+      "not an estimate of production quality"
+    ],
+    "mean_train_loss": 0.6407361660773555,
+    "model_id": "distilbert/distilbert-base-multilingual-cased",
+    "result_type": "MEASURED_SMOKE",
+    "seed": 42,
+    "selected_epoch": 9,
+    "train_steps": 72,
+    "training_mode": "partial_finetune_cpu",
+    "transformer_test_accuracy": 0.875,
+    "transformer_test_macro_f1": 0.8666666666666667,
+    "transformer_validation_macro_f1": 1.0,
+    "validation_delta_vs_baseline": 0.33333333333333337
+  },
+  "training_meta": {
+    "labels": [
+      "digital_service",
+      "health",
+      "permit",
+      "transport"
+    ],
+    "max_length": 16,
+    "model_id": "distilbert/distilbert-base-multilingual-cased",
+    "preprocessing_version": "bayan-prep/1.0.0",
+    "repo_sha": "5d83b7de5efbb4864d2fd3e53ef0d790bb4f0557",
+    "selected_epoch": 9,
+    "training_mode": "partial_finetune_cpu"
+  },
+  "_provenance": {
+    "notebook": "03_text_classification.ipynb",
+    "code_cell": 18,
+    "execution_count": null
+  }
+}
