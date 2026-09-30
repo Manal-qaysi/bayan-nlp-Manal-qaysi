@@ -1,0 +1,36 @@
+# PROGRESS — Bayan Gates A–E
+
+- **Student GitHub:** `{{ OWNER }}`
+- **Repository:** {{ REPO_URL }}
+- **Last updated:** {{ rendered_at }} (rendered by `scripts/collect_results.py`)
+
+لا توضع علامة ✅ قبل وجود رابط commit أو تقرير أو اختبار قابل للفحص؛ الحالات أدناه تُحسب آليًا من وجود نتائج الدفاتر المنفّذة.
+
+{% set ran = {} %}
+{% for nb in NOTEBOOKS %}{% set _ = ran.update({nb.name[:2]: nb.ran}) %}{% endfor %}
+| Gate | Status | Required evidence | Commit/report links | Blocker/next action |
+|---|---|---|---|---|
+| A — ingest | {{ '✅ PASSED' if ran['01'] and ran['05'] else '🟨 IN_PROGRESS' }} | preprocessing tests + tokenizer decision | [nb01](reports/nb01_tokenization.json) · [nb05](reports/nb05_arabic.json) · `tests/test_my_arabic_golden.py` · D-002/D-003 | {{ '—' if ran['01'] and ran['05'] else 'run + save notebooks 01 and 05' }} |
+| B — tasks | {{ '✅ PASSED' if ran['03'] and ran['04'] else '🟨 IN_PROGRESS' }} | classification + NER + QA evidence | [nb03](reports/nb03_classification.json) · [nb04](reports/nb04_ner_qa.json) · D-004 | {{ '—' if ran['03'] and ran['04'] else 'run + save notebooks 03 and 04' }} |
+| C — search & truth | {{ '✅ PASSED' if ran['06'] and ran['07'] else '🟨 IN_PROGRESS' }} | search metrics + slices + taxonomy | [nb06](reports/nb06_retrieval.json) · [nb07](reports/nb07_evaluation.json) · `EVALUATION_REPORT.md` | {{ '—' if ran['06'] and ran['07'] else 'run + save notebooks 06 then 07' }} |
+| D — ship | {{ '✅ PASSED' if ran['08'] else '🟨 IN_PROGRESS' }} | project benchmark + API tests + canaries | [nb08](reports/nb08_benchmark.json) · `BENCHMARKS.md` · D-007/D-008 | {{ '—' if ran['08'] else 'run notebook 08 in PROJECT_MODE after 03' }} |
+| E — submit | 🟨 IN_PROGRESS | validator + demo + release tag | `reports/preflight.json` · `PRESENTATION.md` | validator + preflight, then tag `submission-v1.0` |
+
+Status values: `⬜ NOT_STARTED`, `🟨 IN_PROGRESS`, `✅ PASSED`, `🟥 BLOCKED`.
+
+## Runtime/run-all evidence
+
+| Notebook | Clean run saved (commit date) | Core marker | Colab / GitHub link | run from repo commit |
+|---|---|---|---|---|
+{% for nb in NOTEBOOKS %}
+| {{ nb.name[:2] }} | {{ ((nb.commit_date ~ ' · `' ~ nb.commit_sha[:7] ~ '`') if nb.commit_sha else 'collected; saving commit not found') if nb.ran else PENDING }} | `{{ nb.marker }}` | [Colab]({{ nb.colab }}) · [GitHub]({{ nb.github }}) | `{{ INDEX.get(nb.result, {}).get('repo_sha') | short(7) if nb.ran else '—' }}` |
+{% endfor %}
+
+## Final release
+
+- Final commit: الـcommit الذي يشير إليه `submission-v1.0` (يُطبع بخلية الفحص النهائية في `docs/learner-workflow` للدورة: `FINAL_COMMIT_SHA`).
+- Release/tag `submission-v1.0`: {{ REPO_URL }}/releases/tag/submission-v1.0
+- Validator pre-tag report: `reports/submission_validation.json`
+- Validator `--require-tag` report: `reports/preflight.json` (بعد إنشاء الوسم)
+- Private-window visibility check: يُفحص يدويًا بفتح المستودع وروابط Colab في نافذة خاصة قبل التسليم.
+- Remaining limitation: عينات صغيرة اصطناعية (انظري `EVALUATION_REPORT.md` §9).

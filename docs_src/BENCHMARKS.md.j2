@@ -1,0 +1,119 @@
+{% set B = 'nb08_benchmark.benchmark.' %}
+# BENCHMARKS — Bayan
+
+> يُولَّد من `docs_src/BENCHMARKS.md.j2`. §2 (الميزانية) كُتب ورُفع **قبل** تشغيل أي مرشح للمشروع. الأقسام 3–8 منقولة آليًا من [دفتر 08](notebooks/08_optimization_serving.ipynb) → [`reports/nb08_benchmark.json`](reports/nb08_benchmark.json).
+
+## 1. Claim boundary | حدود الادعاء
+
+- Artefact role: `{{ v(B ~ 'artefact_role') }}` — رأس topic الذي درّبته في دفتر 03، وليس checkpoint مسار Systems Smoke.
+- Result label: `{{ v(B ~ 'result_label') }}`
+- Task: Multilingual (AR/EN) topic text classification — 4 labels
+- Author: Manal Qaysi
+- لا تمثل هذه الأرقام خدمة إنتاجية. القياس على CPU في Colab، وعلى workload صغيرة ثابتة.
+
+## 2. Performance budget — written before candidates
+
+| Constraint | TARGET | Why this matters |
+|---|---:|---|
+| p95 model-only latency per workload call (8 texts, batch 4) | 100 ms | استجابة تفاعلية لموظف الفرز على CPU مجاني |
+| minimum throughput | 20 items/s | فرز دفعة الملاحظات اليومية دون GPU |
+| maximum quality tax | 0.02 macro-F1 | التحسين لا يستحق أن يُفقد أكثر من نقطتين من الجودة |
+| target device | Colab CPU (`CPUExecutionProvider`) | بيئة قابلة لإعادة الإنتاج للجميع |
+
+- **Commit/time proving budget existed before candidate:** هذه القيم مكتوبة في هذا الملف وفي خلية الإعداد في دفتر 08 منذ commit «perf: write performance budget before measuring candidates» بتاريخ 2026-09-30، وهو سابق لأول تشغيل لـ`PROJECT_MODE` (راجعي `git log -- BENCHMARKS.md docs_src/BENCHMARKS.md.j2`). في الدفتر: `BUDGET_PROVENANCE = {{ v(B ~ 'budget_provenance') }}`.
+
+## 3. Reproduction contract
+
+| Field | Value |
+|---|---|
+| Colab runtime / Python | Python {{ v(B ~ 'environment.python') }} — `{{ v(B ~ 'environment.platform') }}` |
+| Device / provider | `{{ v(B ~ 'environment.device') }}` / `{{ v(B ~ 'environment.ort_provider') }}` |
+| Runtime doctor (notebook 00) | device={{ v('nb00_runtime.device') }}, GPU={{ v('nb00_runtime.gpu_name') }}, in_colab={{ v('nb00_runtime.in_colab') }} |
+| Library versions | torch {{ v(B ~ 'environment.torch') }} · onnx {{ v(B ~ 'environment.onnx') }} · onnxruntime {{ v(B ~ 'environment.onnxruntime') }} (pinned in `requirements-day4.txt`) |
+| Model ID / revision / hash | `distilbert/distilbert-base-multilingual-cased` fine-tuned in notebook 03 ({{ v('nb08_benchmark.training_meta.training_mode') }}, epoch {{ v('nb08_benchmark.training_meta.selected_epoch') }}); state SHA-256 `{{ v(B ~ 'pytorch_fp32.state_sha256') | short(16) }}…` |
+| Trained from repository commit | `{{ v('nb08_benchmark.training_meta.repo_sha') | short(12) }}` |
+| Preprocessing version | `{{ v('nb08_benchmark.training_meta.preprocessing_version') }}` (training = serving) |
+| Label map version | {{ v('nb08_benchmark.training_meta.labels') | lst }} (saved with the checkpoint config) |
+| Workload path / hash | validation split of `data/sample/bayan_day2_classification.csv`، SHA-256 `{{ v(B ~ 'workload.sha256') | short(16) }}…` |
+| Split | validation (candidate selection); frozen test not used here |
+| Examples + AR/EN counts | {{ v(B ~ 'workload.rows') }} rows · languages {{ v(B ~ 'workload.languages') | lst }} |
+| Length distribution | p50 {{ v(B ~ 'workload.length.p50_tokens') }} · p95 {{ v(B ~ 'workload.length.p95_tokens') }} · max {{ v(B ~ 'workload.length.max_tokens') }} tokens; would truncate: {{ v(B ~ 'workload.length.would_truncate') }} |
+| Batch size | {{ v(B ~ 'workload.batch_size') }} |
+| Padding / max length | dynamic padding per batch / `MAX_LENGTH={{ v(B ~ 'workload.length.configured_max_length') }}` (measured, D-002) |
+| Warm-up / repetitions | {{ v(B ~ 'measurement.warmup') }} / {{ v(B ~ 'measurement.repetitions') }} |
+| Measured boundary | `{{ v(B ~ 'measurement.boundary') }}` |
+| Memory method | {{ v(B ~ 'measurement.memory_method') }} |
+
+## 4. Controlled candidates
+
+| ID | Runtime/precision | Only intended change | Artefact hash | Size MiB |
+|---|---|---|---|---:|
+| A | PyTorch FP32 reference | baseline | `{{ v(B ~ 'pytorch_fp32.state_sha256') | short(12) }}` | {{ v(B ~ 'pytorch_fp32.parameter_size_mib') | f1 }} |
+| B | ONNX Runtime FP32 | runtime/export | `{{ v(B ~ 'onnx_fp32.sha256') | short(12) }}` | {{ v(B ~ 'onnx_fp32.size_mib') | f1 }} |
+| C | ONNX Runtime dynamic INT8 | weight quantisation | `{{ v(B ~ 'onnx_dynamic_int8.sha256') | short(12) }}` | {{ v(B ~ 'onnx_dynamic_int8.size_mib') | f1 }} |
+
+INT8 status: available = {{ v(B ~ 'onnx_dynamic_int8.status.available') }}; error = {{ v(B ~ 'onnx_dynamic_int8.status.error') }}
+
+## 5. Parity
+
+| Comparison | max abs logits diff | mean abs diff | prediction agreement | Verdict |
+|---|---:|---:|---:|---|
+| A vs B | {{ v(B ~ 'onnx_fp32.parity.max_abs_logits_diff') }} | {{ v(B ~ 'onnx_fp32.parity.mean_abs_logits_diff') }} | {{ v(B ~ 'onnx_fp32.parity.prediction_agreement') | pct }} | {{ 'PASS' if not is_pending(v(B ~ 'onnx_fp32.parity.max_abs_logits_diff')) and v(B ~ 'onnx_fp32.parity.max_abs_logits_diff') < 0.001 and v(B ~ 'onnx_fp32.parity.prediction_agreement') == 1.0 else ('FAIL' if not is_pending(v(B ~ 'onnx_fp32.parity.max_abs_logits_diff')) else PENDING) }} |
+| A vs C | {{ v(B ~ 'onnx_dynamic_int8.parity.max_abs_logits_diff') }} | {{ v(B ~ 'onnx_dynamic_int8.parity.mean_abs_logits_diff') }} | {{ v(B ~ 'onnx_dynamic_int8.parity.prediction_agreement') | pct }} | reported; INT8 is judged by quality tax, not bit-parity |
+
+- **Tolerance chosen before inspection:** FP32: `max abs logits diff < 1e-3` و`prediction agreement = 1.0` (assertions في الدفتر). INT8: لا أطلب تطابق الـlogits، وأحكم عليه بأثر الجودة ≤ 0.02.
+- **Rationale:** ONNX FP32 يجب أن يكون الحساب نفسه تقريبًا (فروق float فقط). أما INT8 فيغيّر الأوزان عمدًا، فالمهم أثره على Macro-F1.
+
+## 6. Performance results (model-only, per workload call)
+
+| ID | p50 ms | p95 ms | p99 ms | items/s | observed peak RSS MiB | speedup vs A (p95) |
+|---|---:|---:|---:|---:|---:|---:|
+| A | {{ v(B ~ 'pytorch_fp32.model_only.p50_ms') | f2 }} | {{ v(B ~ 'pytorch_fp32.model_only.p95_ms') | f2 }} | {{ v(B ~ 'pytorch_fp32.model_only.p99_ms') | f2 }} | {{ v(B ~ 'pytorch_fp32.model_only.throughput_items_s') | f1 }} | {{ v(B ~ 'pytorch_fp32.model_only.rss_peak_observed_mb') | f1 }} | 1.00× |
+| B | {{ v(B ~ 'onnx_fp32.model_only.p50_ms') | f2 }} | {{ v(B ~ 'onnx_fp32.model_only.p95_ms') | f2 }} | {{ v(B ~ 'onnx_fp32.model_only.p99_ms') | f2 }} | {{ v(B ~ 'onnx_fp32.model_only.throughput_items_s') | f1 }} | {{ v(B ~ 'onnx_fp32.model_only.rss_peak_observed_mb') | f1 }} | {{ v(B ~ 'onnx_fp32.p95_speedup_vs_pytorch') | f2 }}× |
+| C | {{ v(B ~ 'onnx_dynamic_int8.model_only.p50_ms') | f2 }} | {{ v(B ~ 'onnx_dynamic_int8.model_only.p95_ms') | f2 }} | {{ v(B ~ 'onnx_dynamic_int8.model_only.p99_ms') | f2 }} | {{ v(B ~ 'onnx_dynamic_int8.model_only.throughput_items_s') | f1 }} | {{ v(B ~ 'onnx_dynamic_int8.model_only.rss_peak_observed_mb') | f1 }} | — |
+
+PyTorch end-to-end (tokenisation + model): p95 {{ v(B ~ 'pytorch_fp32.end_to_end.p95_ms') | f2 }} ms، {{ v(B ~ 'pytorch_fp32.end_to_end.throughput_items_s') | f1 }} items/s.
+
+## 7. Quality results
+
+- Primary task metric: `{{ v(B ~ 'pytorch_fp32.quality_metric') }}` (macro-F1 on the full validation workload, same examples for every candidate)
+- Evaluation file/split: validation workload (n={{ v(B ~ 'workload.rows') }})
+
+| ID | Task quality | Quality tax = A − candidate | Small-sample/CI note |
+|---|---:|---:|---|
+| A | {{ v(B ~ 'pytorch_fp32.quality') | f3 }} | 0 | n={{ v(B ~ 'workload.rows') }}: خطأ واحد يغيّر Macro-F1 كثيرًا |
+| B | {{ v(B ~ 'onnx_fp32.quality') | f3 }} | {{ v(B ~ 'onnx_fp32.quality_tax') | f3 }} | الأمثلة نفسها |
+| C | {{ v(B ~ 'onnx_dynamic_int8.quality') | f3 }} | {{ v(B ~ 'onnx_dynamic_int8.quality_tax') | f3 }} | الأمثلة نفسها |
+
+## 8. Budget verdict and decision
+
+| Candidate | latency OK | throughput OK | quality OK | Overall |
+|---|---|---|---|---|
+| B | {{ v(B ~ 'onnx_fp32.budget.latency_ok') | yesno }} | {{ v(B ~ 'onnx_fp32.budget.throughput_ok') | yesno }} | {{ v(B ~ 'onnx_fp32.budget.quality_ok') | yesno }} | {{ v(B ~ 'onnx_fp32.budget.budget_met') | yesno }} |
+| C | {{ v(B ~ 'onnx_dynamic_int8.budget.latency_ok') | yesno }} | {{ v(B ~ 'onnx_dynamic_int8.budget.throughput_ok') | yesno }} | {{ v(B ~ 'onnx_dynamic_int8.budget.quality_ok') | yesno }} | {{ v(B ~ 'onnx_dynamic_int8.budget.budget_met') | yesno }} |
+
+- Selected runtime: `{{ v(B ~ 'selected_for_service') }}`
+- Decision: **{{ v(B ~ 'adoption_decision') }}**
+- Evidence-based reason: القاعدة المكتوبة مسبقًا في دفتر 08: INT8 إن حقق الميزانية كاملة، وإلا ONNX FP32 إن حققها، وإلا PyTorch FP32. الجدول أعلاه يبيّن أي شرط تحقق.
+- Known limitation/noise source: Colab CPU مشترك وزمنه يتذبذب بين الجلسات؛ الـworkload 8 نصوص قصيرة؛ ذاكرة RSS تقريبية للعملية كلها.
+- FP32 rollback/reproduction path: أعيد تشغيل دفتر 03 (يحفظ artefact في Drive)، ثم دفتر 08. الأوزان وONNX لا تُرفع إلى GitHub.
+- Generated JSON report: [`reports/nb08_benchmark.json`](reports/nb08_benchmark.json)
+
+## 9. Reproduction commands
+
+1. Run [notebook 03]({{ NOTEBOOKS[3].colab }}) (saves the fine-tuned model to `MyDrive/bayan/model-v1`).
+2. Run [notebook 08]({{ NOTEBOOKS[8].colab }}) with **Runtime → Restart session and run all** (PROJECT_MODE=True).
+3. Save notebook 08 to GitHub, then `python scripts/collect_results.py --strict`.
+
+## 10. Integrity check
+
+- [x] Budget predates candidate results (committed 2026-09-30, before the first PROJECT_MODE run).
+- [x] Same workload/device/batch/boundary used (one workload list and one batch size in the notebook).
+- [x] Warm-up excluded (`benchmark_callable` warm-up calls are not timed).
+- [x] At least 30 measured repetitions.
+- [x] p50/p95/p99 and throughput included.
+- [x] Memory wording matches measurement method (process RSS, observed peak, approximate).
+- [x] Quality tax uses the same examples.
+- [x] Failed/slower candidates were not hidden (all three rows are shown, including INT8 errors).
+- [{{ 'x' if v(B ~ 'result_label') == 'MEASURED' else ' ' }}] Numbers are `MEASURED`, not copied references.
+- [x] No weights, ONNX artefacts, cache, secrets, or PII committed (`.gitignore` + privacy scan in `scripts/collect_results.py`).

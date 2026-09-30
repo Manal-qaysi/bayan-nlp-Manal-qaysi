@@ -1,0 +1,132 @@
+{% set E = 'nb07_evaluation.' %}
+# تقرير تقييم بيان | Bayan Evaluation Report
+
+> يُولَّد من `docs_src/EVALUATION_REPORT.md.j2`. كل رقم منقول آليًا من مخرجات دفاتري المنفّذة. مصدر كل نتيجة (الدفتر والخلية والـcommit) موجود في [`reports/results_index.json`](reports/results_index.json).
+
+## 1. نطاق التقرير
+
+* تاريخ آخر توليد: `{{ rendered_at }}`
+* commit SHA الذي شُغّلت منه الدفاتر (قيمة `repo_sha` المسجّلة داخل كل دفتر):
+{% for nb in NOTEBOOKS %}
+  * `{{ nb.name }}` → run from `{{ INDEX.get(nb.result, {}).get('repo_sha') | short(12) if nb.ran else PENDING }}`، وحُفظ في commit `{{ nb.commit_sha | short(12) if nb.commit_sha else '—' }}` ({{ nb.commit_date or '—' }})
+{% endfor %}
+* runtime/device: Python {{ v('nb00_runtime.python') }} / `{{ v('nb00_runtime.device') }}` (GPU: {{ v('nb00_runtime.gpu_name') }})
+* data version/hash (SHA-256، أول 16 خانة):
+{% for name, digest in DATA_SHA256.items() %}
+  * `data/sample/{{ name }}` — `{{ digest[:16] }}`
+{% endfor %}
+* preprocessing profile/version/backend: `{{ v('nb03_classification.preprocessing_version') }}` (نسخة النموذج، Python) · `search {{ v('nb05_arabic.profile.profile_version') }}` بـ`{{ v('nb05_arabic.profile.backend') }}` (البحث)
+* model/checkpoint IDs: TF-IDF char_wb + LinearSVC (baseline) · `distilbert/distilbert-base-multilingual-cased` (topic, sentiment, NER, QA) · `{{ v('nb06_retrieval.manifest.model_id') }}` + `{{ v('nb06_retrieval.retrieval.reranking.reranker_id') }}` (search)
+* نوع الأرقام: `MEASURED_SMOKE` — قياس فعلي من تشغيلي، على عينات الدورة الاصطناعية الصغيرة.
+
+## 2. العقود قبل القياس
+
+| العقد | الدليل | الحالة |
+|---|---|---|
+| لا PII حقيقية | البيانات اصطناعية، وحجب البريد والجوال في `bayan-prep/1.0.0`، وفحص الخصوصية الآلي في `scripts/collect_results.py` | PASS |
+| train/validation/test بلا leakage | `group_overlap = {{ v('nb03_classification.split_report.group_overlap') }}` · {{ v('nb03_classification.split_report.rows') }} | {{ 'PASS' if v('nb03_classification.split_report.group_overlap') == 0 else PENDING }} |
+| tokenizer/model متطابقان | مرمّز DistilmBERT مع نموذجه؛ `MAX_LENGTH={{ v('nb03_classification.max_length_choice.max_length') }}` مقاسة (D-002) | {{ 'PASS' if R.get('nb03_classification') else PENDING }} |
+| Arabic profile متطابقة في train/index/query/serve | `bayan-prep/1.0.0` في 03 و08؛ و`search` على corpus وquery في 06 | {{ 'PASS' if R.get('nb08_benchmark') and R.get('nb06_retrieval') else PENDING }} |
+| corpus/query embeddings مطبّعة L2 | assertions في دفتر 06، و`normalization = {{ v('nb06_retrieval.manifest.normalization') }}` | {{ 'PASS' if R.get('nb06_retrieval') else PENDING }} |
+| frozen test لم يُستخدم في tuning | الحقبة والعتبات من validation فقط؛ وtest يُقرأ مرة واحدة | PASS |
+
+## 3. نتائج المهام (frozen test)
+
+| المهمة | المقياس الرئيس | النتيجة | 95% CI (bootstrap 2000) | مجموعة القياس |
+|---|---|---:|---|---|
+| Topic — Transformer | Macro-F1 | {{ v(E ~ 'classification.topic.transformer.estimate') | f3 }} | [{{ v(E ~ 'classification.topic.transformer.ci_low') | f3 }}, {{ v(E ~ 'classification.topic.transformer.ci_high') | f3 }}] | test, n={{ v(E ~ 'classification.topic.n') }} |
+| Topic — baseline | Macro-F1 | {{ v(E ~ 'classification.topic.baseline.estimate') | f3 }} | [{{ v(E ~ 'classification.topic.baseline.ci_low') | f3 }}, {{ v(E ~ 'classification.topic.baseline.ci_high') | f3 }}] | test, n={{ v(E ~ 'classification.topic.n') }} |
+| Sentiment — Transformer | Macro-F1 (observed labels) | {{ v(E ~ 'classification.sentiment.transformer.estimate') | f3 }} | [{{ v(E ~ 'classification.sentiment.transformer.ci_low') | f3 }}, {{ v(E ~ 'classification.sentiment.transformer.ci_high') | f3 }}] | test, n={{ v(E ~ 'classification.sentiment.n') }} |
+| Sentiment — baseline | Macro-F1 (observed labels) | {{ v(E ~ 'classification.sentiment.baseline.estimate') | f3 }} | [{{ v(E ~ 'classification.sentiment.baseline.ci_low') | f3 }}, {{ v(E ~ 'classification.sentiment.baseline.ci_high') | f3 }}] | test, n={{ v(E ~ 'classification.sentiment.n') }} |
+| NER | strict entity F1 (P / R) | {{ v('nb04_ner_qa.ner.by_split.test.overall.f1') | f3 }} ({{ v('nb04_ner_qa.ner.by_split.test.overall.precision') | f3 }} / {{ v('nb04_ner_qa.ner.by_split.test.overall.recall') | f3 }}) | n صغير جدًا؛ لا CI | test: {{ v('nb04_ner_qa.ner.by_split.test.overall.support') }} gold entities |
+| QA | EM / F1 | {{ v('nb04_ner_qa.qa.metrics.test.overall.exact_match') | f3 }} / {{ v('nb04_ner_qa.qa.metrics.test.overall.f1') | f3 }} | n صغير جدًا؛ لا CI | test, n={{ v('nb04_ner_qa.qa.metrics.test.overall.n') }} |
+| QA no-answer | accuracy | {{ v('nb04_ner_qa.qa.metrics.test.overall.no_answer_accuracy') | f3 }} | — | {{ v('nb04_ner_qa.qa.metrics.test.overall.no_answer_n') }} unanswerable |
+| Retrieval (dense) | Recall@3 | {{ v(E ~ 'retrieval_ci.recall@3.estimate') | f3 }} | [{{ v(E ~ 'retrieval_ci.recall@3.ci_low') | f3 }}, {{ v(E ~ 'retrieval_ci.recall@3.ci_high') | f3 }}] | test, {{ v(E ~ 'retrieval_ci.n') }} answerable |
+| Retrieval (dense) | MRR@3 | {{ v(E ~ 'retrieval_ci.mrr@3.estimate') | f3 }} | [{{ v(E ~ 'retrieval_ci.mrr@3.ci_low') | f3 }}, {{ v(E ~ 'retrieval_ci.mrr@3.ci_high') | f3 }}] | test, {{ v(E ~ 'retrieval_ci.n') }} answerable |
+| Retrieval no-answer | accuracy (frozen threshold) | {{ v('nb06_retrieval.retrieval.test_no_answer_accuracy') | f3 }} | — | test |
+
+**NER per entity type (test):**
+
+| Type | P | R | F1 | support |
+|---|---:|---:|---:|---:|
+{% for entity_type, m in v('nb04_ner_qa.ner.by_split.test.per_type').items() %}
+| {{ entity_type }} | {{ m.precision | f3 }} | {{ m.recall | f3 }} | {{ m.f1 | f3 }} | {{ m.support }} |
+{% endfor %}
+
+## 4. شرائح التقييم
+
+| المهمة | الشريحة | n | Macro-F1 | 95% CI | التحذير/التفسير |
+|---|---|--:|---:|---|---|
+{% for head in ['topic', 'sentiment'] %}
+{% for s in v(E ~ 'classification.' ~ head ~ '.slices') %}
+| {{ head }} | `{{ s.slice }}` | {{ s.n }} | {{ s.estimate | f3 }} | [{{ s.ci_low | f3 }}, {{ s.ci_high | f3 }}] | {{ s.flag or '—' }} |
+{% endfor %}
+{% endfor %}
+{% for s in v('nb06_retrieval.retrieval.test_slices') %}
+| retrieval | `{{ s.slice }}` | {{ s.n }} | MRR@3 {{ s['mrr@3'] | f3 }} · R@3 {{ s['recall@3'] | f3 }} | — | {{ s.flag or '—' }} |
+{% endfor %}
+| classification | `variant=Gulf` (topic, dialect comparison, notebook 05) | {{ v('nb05_arabic.dialect_comparison.frozen_gulf_test_n') }} | DistilmBERT {{ v('nb05_arabic.dialect_comparison.results.0.gulf_test_macro_f1') | f3 }} · CAMeLBERT-DA {{ v('nb05_arabic.dialect_comparison.results.1.gulf_test_macro_f1') | f3 }} | — | 4 أمثلة فقط؛ وصفي |
+
+كل الشرائح صغيرة جدًا (`SMALL_SLICE` تعني n<10). الفترات تبيّن أن الفرق بين العربية والإنجليزية لا يمكن الحكم عليه من هذه العينة.
+
+## 5. مقارنة الإصدارات
+
+* Model A: `TF-IDF char_wb (3–5) + LinearSVC`
+* Model B: `distilbert/distilbert-base-multilingual-cased` ({{ v('nb03_classification.topic_run.training_mode') }})
+* observed difference B−A (topic, test): **{{ v(E ~ 'classification.topic.paired_transformer_minus_baseline.difference_b_minus_a') | signed }}** Macro-F1
+* paired 95% CI: [{{ v(E ~ 'classification.topic.paired_transformer_minus_baseline.ci_low') | signed }}, {{ v(E ~ 'classification.topic.paired_transformer_minus_baseline.ci_high') | signed }}] — directional claim supported: **{{ v(E ~ 'classification.topic.paired_transformer_minus_baseline.supports_directional_claim') | yesno }}**
+* sentiment B−A: {{ v(E ~ 'classification.sentiment.paired_transformer_minus_baseline.difference_b_minus_a') | signed }} [{{ v(E ~ 'classification.sentiment.paired_transformer_minus_baseline.ci_low') | signed }}, {{ v(E ~ 'classification.sentiment.paired_transformer_minus_baseline.ci_high') | signed }}]
+* القرار المهني: إذا شملت الفترة الزوجية الصفر، لا أقول إن أحد النموذجين أفضل؛ أقول إن العينة (n=8) لا تدعم ادعاءً اتجاهيًا. أحتفظ بالـbaseline مرجعًا ومسار رجوع.
+
+## 6. Behavioural tests
+
+| النوع | passed/total | pass rate | فشل مهم |
+|---|---:|---:|---|
+| invariance (all perturbations, topic head) | {{ v('nb03_classification.behavioural.overall.passed') }}/{{ v('nb03_classification.behavioural.overall.total') }} | {{ v('nb03_classification.behavioural.overall.pass_rate') | pct }} | انظري التفصيل أدناه |
+{% for name, s in v('nb03_classification.behavioural.by_perturbation').items() %}
+| invariance — `{{ name }}` | {{ s.passed }}/{{ s.total }} | {{ s.pass_rate | pct }} | {{ '—' if s.pass_rate == 1 else 'يتغير التنبؤ مع تغيير شكلي' }} |
+{% endfor %}
+| directional (no-answer must abstain: QA test) | {{ v('nb04_ner_qa.qa.metrics.test.overall.no_answer_n') }} cases | {{ v('nb04_ner_qa.qa.metrics.test.overall.no_answer_accuracy') | pct }} | {{ 'النموذج يجيب عن أسئلة لا إجابة لها' if v('nb04_ner_qa.qa.metrics.test.overall.no_answer_accuracy') == 0 else '—' }} |
+| minimum functionality (service) | AR 200 · EN 200 · empty 422 · unsupported language 422 · too long 422 | {{ '100%' if R.get('nb08_benchmark') else PENDING }} | — |
+
+## 7. تحليل الأخطاء
+
+* المصدر: أخطاء **validation** الفعلية من كل المهام{% if v(E ~ 'post_freeze_test_errors_used') %}. ولأن عددها كان أقل من 5، أُضيفت أخطاء test بعد التجميد، بوسم `test_post_freeze`، للتحليل فقط لا للضبط{% endif %}.
+* عدد الأخطاء المقروءة يدويًا: `{{ v(E ~ 'error_pool_size') }}` — تمت المراجعة اليدوية للتصنيف: **{{ v(E ~ 'taxonomy_reviewed_by_student') | yesno }}**
+* رابط worksheet داخل المستودع: [`reports/nb07_evaluation.json`](reports/nb07_evaluation.json) (`errors`)، وخلية «✍️ مراجعتي اليدوية» في [دفتر 07](notebooks/07_evaluation_error_analysis.ipynb).
+
+| taxonomy tag | count | أمثلة (IDs) | مثال آمن مختصر | المهام |
+|---|---:|---|---|---|
+{% for row in v(E ~ 'taxonomy') %}
+| `{{ row.taxonomy_tag }}` | {{ row.count }} | {{ row.example_ids | lst }} | {{ row.example }} | {{ row.tasks | lst }} |
+{% endfor %}
+
+**الأخطاء نفسها:**
+
+| split | task | id | text | gold → prediction | tag | why |
+|---|---|---|---|---|---|---|
+{% for e in v(E ~ 'errors') %}
+| {{ e.split }} | {{ e.task }} | {{ e.example_id }} | {{ e.text[:60] }} | {{ e.gold }} → {{ e.prediction }} | `{{ e.taxonomy_tag }}` | {{ e.rationale }} |
+{% endfor %}
+
+## 8. الإصلاحات الثلاثة ذات الأولوية
+
+| الأولوية | الفئة | الدليل | الإجراء | metric/slice المتوقع | الكلفة | اختبار عدم الرجوع |
+|---:|---|---|---|---|---|---|
+{% for fix in v(E ~ 'prioritized_fixes') %}
+| {{ fix.priority }} | `{{ fix.taxonomy_tag }}` | {{ fix.evidence }} | {{ fix.action }} | {{ fix.expected_metric }} | {{ fix.cost }} | {{ fix.regression_test }} |
+{% endfor %}
+
+## 9. ما الذي لا تثبته النتائج؟
+
+* حجم test صغير جدًا (n=8 للتصنيف)، والفترات واسعة، فلا تعميم على بيانات إنتاجية.
+* البيانات اصطناعية تعليمية، ولا تمثل تنوع النصوص الواقعية.
+* الخليجية ممثلة بأمثلة قليلة، واللهجات الأخرى وArabizi غير مقاسة.
+* في sentiment تنقص validation فئة `positive` وتنقص test فئة `neutral`، فالمقياس لا يغطي كل الفئات في كل split.
+* NER وQA قيسا على عدد قليل جدًا من الجمل. EM/F1 هنا تدل على سلامة المسار لا على جودة عامة.
+* قياسات الزمن من Colab CPU مشترك، وتختلف بين الجلسات.
+* بذرة واحدة فقط (42)، ولا توجد تقديرات من تشغيلات متكررة.
+
+## 10. خلاصة للإدارة
+
+على test المجمّد (8 أمثلة) حقق رأس الموضوع في DistilmBERT Macro-F1 = {{ v(E ~ 'classification.topic.transformer') | ci }} مقابل {{ v(E ~ 'classification.topic.baseline') | ci }} للـbaseline، والفرق الزوجي {{ v(E ~ 'classification.topic.paired_transformer_minus_baseline.difference_b_minus_a') | signed }} ({{ 'يدعم ادعاءً اتجاهيًا' if v(E ~ 'classification.topic.paired_transformer_minus_baseline.supports_directional_claim') == true else 'لا يدعم ادعاءً اتجاهيًا' }}). أكثر فئات الخطأ تكرارًا: `{{ v(E ~ 'taxonomy.0.taxonomy_tag') }}`، والإصلاح الأول: {{ v(E ~ 'prioritized_fixes.0.action') }}. الخدمة تعمل بـ`{{ v('nb08_benchmark.benchmark.selected_for_service') }}` وفق ميزانية مكتوبة مسبقًا (انظري [`BENCHMARKS.md`](BENCHMARKS.md)). النظام مناسب للتعلم والعرض، ولا يصلح لاتخاذ قرارات عن أشخاص.

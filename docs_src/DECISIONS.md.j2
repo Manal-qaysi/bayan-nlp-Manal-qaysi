@@ -1,0 +1,221 @@
+# DECISIONS — Bayan
+
+> يُولَّد من `docs_src/DECISIONS.md.j2`. الأدلة الرقمية منقولة آليًا من مخرجات الدفاتر، والمصدر لكل قرار مذكور. القيمة المعلّمة بـ ⏳ تعني أن الدفتر المسؤول لم يُشغَّل بعد.
+>
+> **Owner:** Manal Qaysi · **Last rendered:** {{ rendered_at }}
+
+## Decision D-001 — Dataset split and leakage control
+
+* **Date:** 2026-09-29 · **Gate:** A — Data and evaluation · **Status:** accepted · **Owner:** Manal Qaysi
+
+### Context | السياق
+مجموعة التصنيف ثنائية اللغة، وكثير من أمثلتها أزواج عربي/إنجليزي لنفس الحالة. إذا وقع طرفا الزوج في split مختلفين يحصل تسرّب.
+
+### Options considered | البدائل
+| Option | Benefit | Cost/risk | Evidence |
+|---|---|---|---|
+| A — Group-isolated fixed split | يمنع عبور الأزواج بين train/validation/test | أمثلة أقل استقلالًا | `group_overlap = {{ v('nb03_classification.split_report.group_overlap') }}`، `{{ v('nb03_classification.split_report.groups') }}` مجموعة |
+| B — Row-level random split | سهل | تسرّب محتمل بين الأزواج | لم يُختر |
+
+### Decision | القرار
+أستخدم التقسيم المجمّد المعزول بالمجموعات: {{ v('nb03_classification.split_report.rows') }}. لا أفتح test إلا بعد تثبيت الإعدادات على validation.
+
+### Evidence | الدليل
+* [دفتر 03](notebooks/03_text_classification.ipynb) → [`reports/nb03_classification.json`](reports/nb03_classification.json) (`split_report`) · data SHA-256 `{{ v('nb03_classification.data_sha256') | short(16) }}…`
+
+### Consequences and rollback
+* الأثر: تقييم منضبط. القيد: test فيه 8 أمثلة فقط، فعدم اليقين كبير.
+* الرجوع: عند اكتشاف تسرّب أعيد بناء التقسيم من البيانات بإصدار جديد، وأسجّل data hash جديدًا.
+
+---
+
+## Decision D-002 — Tokenizer and maximum sequence length
+
+* **Date:** 2026-09-30 · **Gate:** A — Text preparation · **Status:** accepted · **Owner:** Manal Qaysi
+
+### Context | السياق
+التقييم السابق خصم لأن `MAX_LENGTH = 64` كانت بلا قياس. الآن أقيس أطوال الرموز الفعلية لكل لغة بمرمّزين قبل الاختيار.
+
+### Evidence table | الدليل المقاس ([دفتر 01](notebooks/01_text_processing_tokenization.ipynb))
+| Tokenizer | Lang | n | fertility (tokens/word) | p95 tokens | max tokens | trunc@16 | trunc@32 | trunc@64 |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+{% for key in ['mbert', 'distilmbert'] %}
+{% for lang in ['ar', 'en'] %}
+{% set p = v('nb01_tokenization.tokenizer_audit.' ~ key ~ '.per_language.' ~ lang) %}
+| {{ key }} | {{ lang }} | {{ p.n }} | {{ p.mean_fertility | f2 }} | {{ p.p95_tokens | f1 }} | {{ p.max_tokens }} | {{ p.truncation_rate['16'] | pct }} | {{ p.truncation_rate['32'] | pct }} | {{ p.truncation_rate['64'] | pct }} |
+{% endfor %}
+{% endfor %}
+
+- QA (سؤال + سياق): أطول زوج = {{ v('nb01_tokenization.qa_pair_max_tokens') }} رمزًا، ونسبة القطع عند 96 = {{ v('nb01_tokenization.qa_truncation_at_96') | pct }}.
+- في [دفتر 03](notebooks/03_text_classification.ipynb) أعدت القياس على train+validation بمرمّز النموذج نفسه، فكانت p95 = {{ v('nb03_classification.length_evidence.p95_tokens') | f1 }} والأقصى = {{ v('nb03_classification.length_evidence.max_tokens') }}.
+
+### Options considered | البدائل
+| Option | Benefit | Cost/risk |
+|---|---|---|
+| A — أصغر طول مرشح بلا قطع (قاعدة مقاسة) | لا يُفقد نص، وحشو أقل، وزمن أقل | النصوص الأطول مستقبلًا قد تُقطع؛ لذلك أعيد القياس عند تغيّر البيانات |
+| B — 64 ثابتة | بسيطة | بلا دليل، وحشو زائد |
+| C — بلا حد | لا قطع أبدًا | ذاكرة وزمن غير محدودين |
+
+### Decision | القرار
+- المرمّز: `distilbert/distilbert-base-multilingual-cased` (مطابق للنموذج).
+- `MAX_LENGTH = {{ v('nb03_classification.max_length_choice.max_length') }}` للتصنيف ({{ v('nb03_classification.max_length_choice.rule') }})، وقد اقترح دفتر 01 القيمة {{ v('nb01_tokenization.chosen_max_length') }} على كل نصوص المشروع. تُستخدم القيمة نفسها في الخدمة (08) عبر `bayan_training_meta.json`.
+- QA: أُبقي `max_length=96` لأن القطع عندها {{ v('nb01_tokenization.qa_truncation_at_96') | pct }}.
+
+### Consequences and rollback
+* الفحص يتكرر آليًا في 03 عند كل تشغيل. إذا ظهر قطع في بيانات جديدة ينتقل الاختيار إلى المرشح التالي.
+* الرجوع: أعيد القيمة السابقة في `CANDIDATE_LENGTHS` وأعيد التدريب والتقييم.
+
+---
+
+## Decision D-003 — Arabic preprocessing profile
+
+* **Date:** 2026-09-30 · **Gate:** A/C — Data preparation · **Status:** accepted · **Owner:** Manal Qaysi
+
+### Context | السياق
+المعالجة العدوانية قد تدمج كلمات مختلفة في المعنى، أما البحث فيستفيد من توحيد الأشكال.
+
+### Options considered | البدائل
+| Option | Use | Rules | Evidence |
+|---|---|---|---|
+| A — `bayan-prep/1.0.0` محافظ | نسخة النموذج في التصنيف والخدمة | NFC، إزالة التطويل، حجب البريد والجوال، توحيد المسافات؛ ويُحفظ التشكيل والألف والياء | idempotent: {{ v('nb01_tokenization.idempotent') | yesno }}؛ غيّر {{ v('nb01_tokenization.changed_by_preprocessing') }} نصًا من {{ v('nb01_tokenization.texts') }} |
+| B — CAMeL `search` {{ v('nb05_arabic.profile.profile_version') }} | البحث الدلالي (corpus وquery) | ما سبق + إزالة التشكيل + توحيد الألف والألف المقصورة؛ وتبقى التاء المربوطة | الاختبارات الذهبية: {{ v('nb05_arabic.profile.golden_cases_passed') }} ناجحة ([دفتر 05](notebooks/05_arabic_nlp.ipynb)) + [`tests/test_my_arabic_golden.py`](tests/test_my_arabic_golden.py) |
+| C — توحيد التاء المربوطة إلى هاء | — | — | مرفوض: يدمج «حالة/حاله» ويغيّر المعنى |
+
+### Tokenizer evidence per variant ([دفتر 05](notebooks/05_arabic_nlp.ipynb))
+| Tokenizer | Slice | fertility | max tokens |
+|---|---|---:|---:|
+{% for model_id, slices in v('nb05_arabic.variant_tokenizer_audit').items() %}
+{% for name, p in slices.items() %}
+| {{ model_id.split('/')[-1] }} | {{ name }} | {{ p.mean_fertility | f2 }} | {{ p.max_tokens }} |
+{% endfor %}
+{% endfor %}
+
+### Decision | القرار
+أستخدم A لنسخة النموذج، وB للبحث فقط، ويُطبَّق B على corpus وquery معًا. Arabizi يبقى في مسار مستقل بلا تحويل (المرشحون: {{ v('nb05_arabic.arabizi_candidates') | lst }}).
+
+### Consequences and rollback
+* نسخة العرض لا تتغير أبدًا. أي تغيير في القواعد يرفع الإصدار ويُعاد بسببه بناء الفهرس.
+* الرجوع: أعيد الإصدار السابق وأعيد تشغيل الاختبارات الذهبية والتقييم.
+
+---
+
+## Decision D-004 — Task models, baselines and training
+
+* **Date:** 2026-09-30 · **Gate:** B — Model quality · **Status:** accepted · **Owner:** Manal Qaysi
+
+### Evidence | الدليل (frozen test، `MEASURED_SMOKE`)
+| Head | Baseline (TF-IDF char + LinearSVC) | Transformer (DistilmBERT) | Training |
+|---|---:|---:|---|
+| topic Macro-F1 | {{ v('nb03_classification.heads.topic.test.baseline_macro_f1') | f3 }} | {{ v('nb03_classification.heads.topic.test.transformer_macro_f1') | f3 }} | {{ v('nb03_classification.topic_run.training_mode') }}، epoch {{ v('nb03_classification.topic_run.selected_epoch') }} |
+| sentiment Macro-F1 (observed labels) | {{ v('nb03_classification.heads.sentiment.test.baseline_macro_f1') | f3 }} | {{ v('nb03_classification.heads.sentiment.test.transformer_macro_f1') | f3 }} | epoch {{ v('nb03_classification.sentiment_training.selected_epoch') }}، {{ v('nb03_classification.sentiment_training.steps') }} خطوة |
+| NER strict entity F1 (test) | — | {{ v('nb04_ner_qa.ner.by_split.test.overall.f1') | f3 }} | {{ v('nb04_ner_qa.ner.steps') }} خطوة |
+| QA EM / F1 (test) | — | {{ v('nb04_ner_qa.qa.metrics.test.overall.exact_match') | f3 }} / {{ v('nb04_ner_qa.qa.metrics.test.overall.f1') | f3 }} | {{ v('nb04_ner_qa.qa.steps') }} خطوة |
+
+### Decisions | القرارات
+- **رأسان مستقلان** لـtopic وsentiment، لكل منهما label map خاصة، على التقسيم نفسه. أحتفظ بالـbaseline مرجعًا دائمًا.
+- **NER:** يأخذ أول subword وسم الكلمة، وتأخذ الاستمرارات والرموز الخاصة `-100`. التقييم صارم على مستوى الكيان ولكل نوع.
+- **QA:** رفعت خطوات التدريب من 1–3 إلى 20 كي يكون لـEM/F1 معنى. **سياسة عدم الإجابة:** أمتنع إذا كان `null_score − best_span_score > {{ v('nb04_ner_qa.qa.null_threshold') }}` ({{ v('nb04_ner_qa.qa.threshold_choice.source') }}).
+- **قيد:** في sentiment تنقص validation فئة `positive` وتنقص test فئة `neutral`، لذلك يُحسب Macro-F1 على الفئات الملاحظة فقط.
+
+### Consequences and rollback
+* الرجوع: إذا لم يحقق Transformer الجودة أو الميزانية، أخدم الـbaseline وأسجّل ذلك قرارًا جديدًا.
+
+---
+
+## Decision D-005 — Semantic encoder, index, k and no-answer threshold
+
+* **Date:** 2026-09-30 · **Gate:** C — Search · **Status:** accepted · **Owner:** Manal Qaysi
+
+| Field | Value | Evidence |
+|---|---|---|
+| Encoder | `{{ v('nb06_retrieval.manifest.model_id') }}` (dim {{ v('nb06_retrieval.manifest.embedding_dimension') }}) | [`reports/nb06_retrieval.json`](reports/nb06_retrieval.json) |
+| Normalisation / index | L2 + `{{ v('nb06_retrieval.manifest.index_type') }}` ({{ v('nb06_retrieval.manifest.vector_count') }} vectors) | manifest |
+| k | {{ v('nb06_retrieval.retrieval.k') }} | — |
+| No-answer threshold | {{ v('nb06_retrieval.retrieval.frozen_no_answer_threshold') | f3 }} (validation فقط؛ دقتها {{ v('nb06_retrieval.retrieval.validation_no_answer_accuracy') | f3 }}) | test: {{ v('nb06_retrieval.retrieval.test_no_answer_accuracy') | f3 }} |
+| Re-ranker | `{{ v('nb06_retrieval.retrieval.reranking.reranker_id') }}`: MRR@3 {{ v('nb06_retrieval.retrieval.reranking.mrr_at_3_before') | f3 }} → {{ v('nb06_retrieval.retrieval.reranking.mrr_at_3_after') | f3 }}، وp95 {{ v('nb06_retrieval.retrieval.reranking.p95_rerank_ms') | f1 }} ms | **{{ v('nb06_retrieval.retrieval.reranking.decision') }}** |
+
+الرجوع: أي تغيير في النموذج أو الـprofile أو البيانات يستلزم إعادة بناء الفهرس، لأن الـmanifest يربطها معًا.
+
+---
+
+## Decision D-006 — Metrics, slices and error priorities
+
+* **Date:** 2026-09-30 · **Gate:** C — Evaluation · **Status:** accepted · **Owner:** Manal Qaysi
+
+- **المقاييس:** Macro-F1 للتصنيف (يعطي الفئات وزنًا متساويًا)، وstrict entity F1 لـNER، وEM/F1 ودقة عدم الإجابة لـQA، وRecall@3/MRR@3 ودقة no-answer للبحث.
+- **عدم اليقين:** 95% bootstrap CI (2000 إعادة)، ومقارنة زوجية. لا أدّعي اتجاهًا ما لم تستبعد الفترة الصفر. Topic: الفرق {{ v('nb07_evaluation.classification.topic.paired_transformer_minus_baseline.difference_b_minus_a') | signed }}، والفترة [{{ v('nb07_evaluation.classification.topic.paired_transformer_minus_baseline.ci_low') | signed }}, {{ v('nb07_evaluation.classification.topic.paired_transformer_minus_baseline.ci_high') | signed }}].
+- **الشرائح:** اللغة (ar/en). أي شريحة n<10 تُوسم `SMALL_SLICE`.
+- **أولويات الإصلاح** (من تصنيف أخطاء نماذجي في [دفتر 07](notebooks/07_evaluation_error_analysis.ipynb)، ومراجعته اليدوية: {{ v('nb07_evaluation.taxonomy_reviewed_by_student') | yesno }}):
+{% for fix in v('nb07_evaluation.prioritized_fixes') %}
+  {{ fix.priority }}. `{{ fix.taxonomy_tag }}` — {{ fix.action }} (دليل: {{ fix.evidence }})
+{% endfor %}
+
+---
+
+## Decision D-007 — Performance budget
+
+* **Date:** 2026-09-30 · **Gate:** D — Serving performance · **Status:** accepted (written **before** measuring project candidates) · **Owner:** Manal Qaysi
+
+| Constraint | TARGET |
+|---|---:|
+| p95 model-only latency per workload call (8 validation texts, batch 4) | ≤ 100 ms |
+| minimum throughput | ≥ 20 items/s |
+| maximum quality tax (validation Macro-F1) | ≤ 0.02 |
+| target device | Colab CPU, `CPUExecutionProvider` |
+
+* **Provenance:** كُتبت هذه القيم في `BENCHMARKS.md` §2 وفي خلية الإعداد في دفتر 08، ورُفعت في commit قبل أول تشغيل لـ`PROJECT_MODE`. في الدفتر: `BUDGET_PROVENANCE = {{ v('nb08_benchmark.benchmark.budget_provenance') }}`.
+* الرجوع: إذا لم يحقق أي مرشح الميزانية، أحتفظ بمرجع PyTorch FP32.
+
+---
+
+## Decision D-008 — ONNX / INT8 runtime adoption
+
+* **Date:** 2026-09-30 · **Gate:** D — Runtime optimisation · **Status:** {{ 'accepted' if not is_pending(v('nb08_benchmark.benchmark.adoption_decision')) else 'pending measurement' }} · **Owner:** Manal Qaysi
+
+| Candidate | p95 ms | items/s | parity (max abs Δ / agreement) | quality tax | budget met |
+|---|---:|---:|---|---:|---|
+| A — PyTorch FP32 | {{ v('nb08_benchmark.benchmark.pytorch_fp32.model_only.p95_ms') | f2 }} | {{ v('nb08_benchmark.benchmark.pytorch_fp32.model_only.throughput_items_s') | f1 }} | reference | 0 | reference |
+| B — ONNX Runtime FP32 | {{ v('nb08_benchmark.benchmark.onnx_fp32.model_only.p95_ms') | f2 }} | {{ v('nb08_benchmark.benchmark.onnx_fp32.model_only.throughput_items_s') | f1 }} | {{ v('nb08_benchmark.benchmark.onnx_fp32.parity.max_abs_logits_diff') }} / {{ v('nb08_benchmark.benchmark.onnx_fp32.parity.prediction_agreement') | pct }} | {{ v('nb08_benchmark.benchmark.onnx_fp32.quality_tax') | f3 }} | {{ v('nb08_benchmark.benchmark.onnx_fp32.budget.budget_met') | yesno }} |
+| C — ONNX dynamic INT8 | {{ v('nb08_benchmark.benchmark.onnx_dynamic_int8.model_only.p95_ms') | f2 }} | {{ v('nb08_benchmark.benchmark.onnx_dynamic_int8.model_only.throughput_items_s') | f1 }} | {{ v('nb08_benchmark.benchmark.onnx_dynamic_int8.parity.max_abs_logits_diff') }} / {{ v('nb08_benchmark.benchmark.onnx_dynamic_int8.parity.prediction_agreement') | pct }} | {{ v('nb08_benchmark.benchmark.onnx_dynamic_int8.quality_tax') | f3 }} | {{ v('nb08_benchmark.benchmark.onnx_dynamic_int8.budget.budget_met') | yesno }} |
+
+* **Decision:** **{{ v('nb08_benchmark.benchmark.adoption_decision') }}**، أي أن الخدمة تعمل بـ`{{ v('nb08_benchmark.benchmark.selected_for_service') }}`. القاعدة مطبّقة آليًا في دفتر 08: INT8 إن حقق الميزانية كاملة، وإلا ONNX FP32 إن حققها، وإلا PyTorch FP32.
+* **Rollback:** أعيد التصدير من artefact دفتر 03 المسجَّل (hash الحالة `{{ v('nb08_benchmark.benchmark.pytorch_fp32.state_sha256') | short(16) }}…`). الأوزان وملفات ONNX تبقى خارج GitHub.
+
+---
+
+## Decision D-009 — Served artefact, preprocessing and label versions
+
+* **Date:** 2026-09-30 · **Gate:** D — Ship · **Status:** {{ 'accepted' if not is_pending(v('nb08_benchmark.service.manifest.runtime')) else 'pending measurement' }} · **Owner:** Manal Qaysi
+
+| Field | Value |
+|---|---|
+| model | `{{ v('nb08_benchmark.service.manifest.model_id') }}` / `{{ v('nb08_benchmark.service.manifest.model_version') }}` |
+| runtime | `{{ v('nb08_benchmark.service.manifest.runtime') }}` |
+| preprocessing | `{{ v('nb08_benchmark.service.manifest.preprocessing_version') }}` (نفسه في التدريب، دفتر 03) |
+| label map | {{ v('nb08_benchmark.service.manifest.label_map') }} |
+| artefact SHA-256 | `{{ v('nb08_benchmark.service.manifest.artifact_sha256') | short(24) }}…` |
+| canaries | مثالان من train بوسميهما الحقيقيين (لا يولّدهما النموذج بنفسه) |
+
+---
+
+## Decision D-010 — Measured extension: hybrid sparse + dense retrieval (RRF)
+
+* **Date:** 2026-09-30 · **Gate:** T7 — Extension · **Status:** {{ v('nb06_extension.decision') }} · **Owner:** Manal Qaysi
+
+* **Rule written before measuring:** أعتمده إذا تحققت ثلاثة شروط: ربح في MRR@3 على validation ≥ 0.05، وعدم انخفاض Recall@3 عبر اللغات، وزمن وسيط إضافي ≤ 5 ms.
+* **Measured:** الربح {{ v('nb06_extension.validation_mrr_gain') | signed }}؛ عدم انخفاض Recall@3 عبر اللغات: {{ v('nb06_extension.cross_lingual_not_worse') | yesno }}؛ الزمن الإضافي {{ v('nb06_extension.added_median_ms') | f2 }} ms. → **{{ v('nb06_extension.decision') }}**.
+* **Evidence:** [`reports/nb06_extension.json`](reports/nb06_extension.json).
+* **Rollback:** الـbaseline (dense فقط) هو الافتراضي، والامتداد لا يغيّر الفهرس ولا العتبة.
+
+---
+
+## قرارات إلزامية قبل Gate E
+
+- [x] tokenizer + max length — D-002
+- [x] Arabic preprocessing profile — D-003
+- [x] task model/baseline and split — D-001، D-004
+- [x] semantic encoder/index/k/threshold — D-005
+- [x] metric/slices/error priorities — D-006
+- [x] performance budget — D-007
+- [{{ 'x' if not is_pending(v('nb08_benchmark.benchmark.adoption_decision')) else ' ' }}] ONNX/INT8 adopt or reject — D-008
+- [{{ 'x' if not is_pending(v('nb08_benchmark.service.manifest.runtime')) else ' ' }}] served artefact + preprocessing/label versions — D-009

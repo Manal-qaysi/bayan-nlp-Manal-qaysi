@@ -1,0 +1,7 @@
+course: bayan-applied-nlp
+student_github: Manal-qaysi
+repository: https://github.com/Manal-qaysi/bayan-nlp-Manal-qaysi
+default_branch: main
+final_tag: submission-v1.0
+runtime: google-colab
+visibility: public

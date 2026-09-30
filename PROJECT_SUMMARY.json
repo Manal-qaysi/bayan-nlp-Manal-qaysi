@@ -1,0 +1,48 @@
+{
+  "student_github": "Manal-qaysi",
+  "repository_url": "https://github.com/Manal-qaysi/bayan-nlp-Manal-qaysi",
+  "languages": [
+    "ar",
+    "en"
+  ],
+  "tasks": [
+    "classification",
+    "sentiment",
+    "ner",
+    "qa",
+    "semantic_search"
+  ],
+  "extension": {
+    "name": "Hybrid sparse+dense retrieval with reciprocal rank fusion (RRF) over the FAISS baseline",
+    "evidence": "reports/nb06_extension.json",
+    "decision": "⏳ PENDING_RUN"
+  },
+  "benchmark_mode": "PROJECT_ARTIFACT",
+  "final_tag": "submission-v1.0",
+  "privacy_check": true,
+  "tests_passed": false,
+  "checks": {
+    "tests": {
+      "passed": false,
+      "summary": "skipped"
+    },
+    "privacy": {
+      "passed": true,
+      "findings": [],
+      "scope": "email / Saudi-mobile patterns outside the documented synthetic examples"
+    },
+    "results_collected": [],
+    "results_missing": [
+      "nb00_runtime",
+      "nb01_tokenization",
+      "nb02_attention",
+      "nb03_classification",
+      "nb04_ner_qa",
+      "nb05_arabic",
+      "nb06_retrieval",
+      "nb07_evaluation",
+      "nb08_benchmark",
+      "nb06_extension"
+    ]
+  }
+}

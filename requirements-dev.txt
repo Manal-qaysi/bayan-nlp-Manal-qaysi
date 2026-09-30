@@ -1,0 +1,4 @@
+# Checks run from the repository root (not needed inside the Colab notebooks).
+numpy
+pytest
+jinja2

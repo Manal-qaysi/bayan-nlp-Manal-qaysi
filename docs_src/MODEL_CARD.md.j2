@@ -1,0 +1,73 @@
+# بطاقة نموذج بيان | Bayan Model Card
+
+> يُولَّد من `docs_src/MODEL_CARD.md.j2`؛ النتائج من [`reports/`](reports/).
+
+## Model details
+
+* Name/version: `Bayan Topic Classifier v1` (+ Sentiment head v1، وNER وQA heads للتجربة)
+* Base checkpoint: `distilbert/distilbert-base-multilingual-cased`
+* Task: `Multilingual (AR/EN) topic classification` — 4 labels: {{ v('nb03_classification.training_meta.labels') | lst }}
+* Training: `{{ v('nb03_classification.topic_run.training_mode') }}`، seed 42، selected epoch {{ v('nb03_classification.topic_run.selected_epoch') }}، `MAX_LENGTH={{ v('nb03_classification.max_length_choice.max_length') }}`
+* License/source: رخصة base checkpoint كما في [بطاقته](https://huggingface.co/distilbert/distilbert-base-multilingual-cased)؛ والرؤوس مدرّبة في مشروع تعليمي
+* Trained from commit: `{{ v('nb03_classification.repo_sha') | short(12) }}` · state SHA-256 `{{ v('nb08_benchmark.benchmark.pytorch_fp32.state_sha256') | short(16) }}…`
+* Served runtime: `{{ v('nb08_benchmark.benchmark.selected_for_service') }}` (D-008)
+* Owner/contact role: Manal Qaysi (`{{ OWNER }}`) — Applied NLP trainee
+
+## Intended use
+
+* الاستخدام المقصود: فرز ملاحظات خدمية عربية (فصحى وخليجية) وإنجليزية قصيرة إلى أربعة موضوعات، مع مراجعة بشرية لكل مخرج، لأغراض تعليمية وتجريبية.
+* المستخدمون المقصودون: المتدربون والمدربة والمراجعون في سياق الدورة.
+* خارج النطاق: الاستخدام الإنتاجي، والقرارات عن أشخاص حقيقيين، والتنميط (profiling)، وأي قرار عالي المخاطر، والنصوص الطويلة، وArabizi، واللهجات غير الخليجية.
+
+## Data and preprocessing
+
+* Dataset ID/version: `data/sample/bayan_day2_classification.csv` — SHA-256 `{{ v('nb03_classification.data_sha256') | short(16) }}…`
+* Languages/variants: Arabic (MSA) + English؛ وقيس الخليجي منفصلًا في دفتر 05
+* Split strategy: {{ v('nb03_classification.split_report.rows') }}، {{ v('nb03_classification.split_report.groups') }} groups، `group_overlap = {{ v('nb03_classification.split_report.group_overlap') }}`
+* PII policy: بيانات اصطناعية، مع حجب البريد والجوال السعودي في نسخة النموذج. نسخة العرض تبقى كما هي، ولا تُنشر إن احتوت PII
+* Preprocessing profile/version/backend: `{{ v('nb03_classification.preprocessing_version') }}` (`src/bayan/project.py`، Python)، مطابق في التدريب والخدمة
+* Tokenizer/embedding model: مرمّز DistilmBERT نفسه
+
+## Evaluation
+
+| metric/slice | n | result | uncertainty (95% bootstrap) | evidence file |
+|---|-:|---:|---|---|
+| Topic Macro-F1 — frozen test | {{ v('nb07_evaluation.classification.topic.n') }} | **{{ v('nb07_evaluation.classification.topic.transformer.estimate') | f3 }}** | [{{ v('nb07_evaluation.classification.topic.transformer.ci_low') | f3 }}, {{ v('nb07_evaluation.classification.topic.transformer.ci_high') | f3 }}] | [`EVALUATION_REPORT.md`](EVALUATION_REPORT.md) |
+| Topic accuracy — frozen test | {{ v('nb03_classification.heads.topic.test.n') }} | {{ v('nb03_classification.heads.topic.test.transformer_accuracy') | f3 }} | — | [`reports/nb03_classification.json`](reports/nb03_classification.json) |
+{% for s in v('nb07_evaluation.classification.topic.slices') %}
+{% if s.slice != 'ALL' %}
+| Topic Macro-F1 — `{{ s.slice }}` | {{ s.n }} | {{ s.estimate | f3 }} | [{{ s.ci_low | f3 }}, {{ s.ci_high | f3 }}] {{ s.flag }} | [`EVALUATION_REPORT.md`](EVALUATION_REPORT.md) |
+{% endif %}
+{% endfor %}
+| Sentiment Macro-F1 (observed labels) — test | {{ v('nb07_evaluation.classification.sentiment.n') }} | {{ v('nb07_evaluation.classification.sentiment.transformer.estimate') | f3 }} | [{{ v('nb07_evaluation.classification.sentiment.transformer.ci_low') | f3 }}, {{ v('nb07_evaluation.classification.sentiment.transformer.ci_high') | f3 }}] | [`EVALUATION_REPORT.md`](EVALUATION_REPORT.md) |
+| Topic Macro-F1 — Gulf test (notebook 05, DistilmBERT) | {{ v('nb05_arabic.dialect_comparison.frozen_gulf_test_n') }} | {{ v('nb05_arabic.dialect_comparison.results.0.gulf_test_macro_f1') | f3 }} | 4 أمثلة؛ وصفي | [`reports/nb05_arabic.json`](reports/nb05_arabic.json) |
+
+**Baseline reference:** TF-IDF char_wb + LinearSVC → topic Macro-F1 = {{ v('nb07_evaluation.classification.topic.baseline') | ci }} على test نفسه. الفرق الزوجي {{ v('nb07_evaluation.classification.topic.paired_transformer_minus_baseline.difference_b_minus_a') | signed }}، ويدعم ادعاءً اتجاهيًا: {{ v('nb07_evaluation.classification.topic.paired_transformer_minus_baseline.supports_directional_claim') | yesno }}.
+
+## Behavioural checks
+
+| capability | pass rate | known failure |
+|---|---:|---|
+| Invariance (punctuation, spaces, tatweel, diacritic, lowercase) | {{ v('nb03_classification.behavioural.overall.passed') }}/{{ v('nb03_classification.behavioural.overall.total') }} ({{ v('nb03_classification.behavioural.overall.pass_rate') | pct }}) | انظري EVALUATION_REPORT §6 |
+| Service contract (AR/EN 200؛ empty, unsupported language, >1000 chars → 422) | {{ '5/5' if R.get('nb08_benchmark') else PENDING }} | — |
+| Startup canaries (gold labels of two training examples) | {{ v('nb08_benchmark.service.tests.canaries') | length if R.get('nb08_benchmark') else PENDING }} PASS | — |
+
+## Limitations and risks
+
+1. test فيه **8 أمثلة** فقط، والفترات واسعة جدًا. النتيجة لا تمثل الأداء الإنتاجي.
+2. البيانات اصطناعية تعليمية، والخليجية ممثلة بأمثلة قليلة، وArabizi واللهجات الأخرى غائبة.
+3. تدريب قصير ببذرة واحدة، وعلى CPU تُحدَّث آخر طبقة فقط. الأخطاء الأكثر تكرارًا: `{{ v('nb07_evaluation.taxonomy.0.taxonomy_tag') }}` (EVALUATION_REPORT §7).
+
+## Ethical and privacy notes
+
+* البيانات لا تمثل أشخاصًا أو حالات حقيقية.
+* حجب PII محدود بالبريد والجوال السعودي، وليس كاشفًا شاملًا.
+* لا يُستخدم النموذج لاتخاذ قرار عن شخص أو لتنميطه. كل مخرج يراجعه إنسان.
+* الأوزان لا تُنشر في GitHub، وتبقى في Drive خاص.
+
+## Reproduction
+
+1. افتحي [notebook 03]({{ NOTEBOOKS[3].colab }}) ثم **Runtime → Restart session and run all** (يحفظ النموذج في `MyDrive/bayan/model-v1`).
+2. runtime/device: Colab (`{{ v('nb03_classification.topic_run.device') }}`)، والإصدارات في `requirements-day2.txt`.
+3. من commit: `{{ v('nb03_classification.repo_sha') | short(12) }}`، البذرة 42.
+4. قارني مع: topic test Macro-F1 = {{ v('nb03_classification.heads.topic.test.transformer_macro_f1') | f3 }}. قد تختلف قليلًا بين GPU وCPU لأن نمط التدريب مختلف.
