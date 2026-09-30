@@ -181,7 +181,7 @@ with Transformers (SDA-AIE-211) in the SDAIA Academy training context.
 
 Academy | الأكاديمية: [SDAIA Academy](https://github.com/SDAIAAcademy)<br>
 Trainer | المدربة: Meaad Al-Marri — ميعاد المري<br>
-Course source | مصدر الدورة: https://github.com/almiyead-rgb/bayan-applied-nlp-course<br>
+Course source | مصدر الدورة: [https://github.com/almiyead-rgb/bayan-applied-nlp-course](https://github.com/SDAIAAcademy)<br>
 #SDAIAAcademy
 
 This attribution does not claim Academy endorsement or ownership of third-party assets.
