@@ -1,0 +1,129 @@
+{
+  "student_github": "Manal-qaysi",
+  "repository_url": "https://github.com/Manal-qaysi/bayan-nlp-Manal-qaysi",
+  "languages": [
+    "ar",
+    "en"
+  ],
+  "tasks": [
+    "classification",
+    "sentiment",
+    "ner",
+    "qa",
+    "semantic_search"
+  ],
+  "extension": {
+    "name": "Hybrid sparse+dense retrieval with reciprocal rank fusion (RRF) over the FAISS baseline",
+    "evidence": "reports/nb06_extension.json",
+    "decision": "REJECT"
+  },
+  "benchmark_mode": "PROJECT_ARTIFACT",
+  "final_tag": "submission-v1.0",
+  "privacy_check": false,
+  "tests_passed": true,
+  "checks": {
+    "tests": {
+      "passed": true,
+      "summary": "96 passed in 0.58s"
+    },
+    "privacy": {
+      "passed": false,
+      "findings": [
+        {
+          "file": "my_work/nlp3_run.ipynb",
+          "match": "541…"
+        },
+        {
+          "file": "my_work/nlp3_run.ipynb",
+          "match": "541…"
+        },
+        {
+          "file": "my_work/nlp3_run.ipynb",
+          "match": "541…"
+        },
+        {
+          "file": "my_work/nlp3_run.ipynb",
+          "match": "510…"
+        },
+        {
+          "file": "notebooks/02_attention_transformers.ipynb",
+          "match": "502…"
+        },
+        {
+          "file": "notebooks/02_attention_transformers.ipynb",
+          "match": "541…"
+        },
+        {
+          "file": "notebooks/02_attention_transformers.ipynb",
+          "match": "541…"
+        },
+        {
+          "file": "notebooks/02_attention_transformers.ipynb",
+          "match": "502…"
+        },
+        {
+          "file": "notebooks/02_attention_transformers.ipynb",
+          "match": "541…"
+        },
+        {
+          "file": "notebooks/02_attention_transformers.ipynb",
+          "match": "510…"
+        },
+        {
+          "file": "notebooks/02_attention_transformers.ipynb",
+          "match": "502…"
+        },
+        {
+          "file": "notebooks/03_text_classification.ipynb",
+          "match": "541…"
+        },
+        {
+          "file": "notebooks/03_text_classification.ipynb",
+          "match": "541…"
+        },
+        {
+          "file": "notebooks/03_text_classification.ipynb",
+          "match": "541…"
+        },
+        {
+          "file": "notebooks/03_text_classification.ipynb",
+          "match": "510…"
+        },
+        {
+          "file": "notebooks/04_ner_and_qa.ipynb",
+          "match": "500…"
+        },
+        {
+          "file": "notebooks/04_ner_and_qa.ipynb",
+          "match": "500…"
+        },
+        {
+          "file": "notebooks/04_ner_and_qa.ipynb",
+          "match": "541…"
+        },
+        {
+          "file": "notebooks/04_ner_and_qa.ipynb",
+          "match": "541…"
+        },
+        {
+          "file": "notebooks/04_ner_and_qa.ipynb",
+          "match": "541…"
+        }
+      ],
+      "scope": "email / Saudi-mobile patterns outside the documented synthetic examples"
+    },
+    "results_collected": [
+      "nb00_runtime",
+      "nb01_tokenization",
+      "nb02_attention",
+      "nb03_classification",
+      "nb04_ner_qa",
+      "nb05_arabic",
+      "nb06_extension",
+      "nb06_retrieval",
+      "nb07_evaluation",
+      "nb08_benchmark"
+    ],
+    "results_missing": []
+  }
+}
