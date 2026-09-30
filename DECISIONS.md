@@ -2,7 +2,7 @@
 
 > يُولَّد من `docs_src/DECISIONS.md.j2`. الأدلة الرقمية منقولة آليًا من مخرجات الدفاتر، والمصدر لكل قرار مذكور. القيمة المعلّمة بـ ⏳ تعني أن الدفتر المسؤول لم يُشغَّل بعد.
 >
-> **Owner:** Manal Qaysi · **Last rendered:** 2026-09-30 13:16 UTC
+> **Owner:** Manal Qaysi · **Last rendered:** 2026-09-30 14:29 UTC
 
 ## Decision D-001 — Dataset split and leakage control
 
@@ -39,12 +39,12 @@
 ### Evidence table | الدليل المقاس ([دفتر 01](notebooks/01_text_processing_tokenization.ipynb))
 | Tokenizer | Lang | n | fertility (tokens/word) | p95 tokens | max tokens | trunc@16 | trunc@32 | trunc@64 |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
-| mbert | ar | ⏳ PENDING_RUN | ⏳ PENDING_RUN | ⏳ PENDING_RUN | ⏳ PENDING_RUN | ⏳ PENDING_RUN | ⏳ PENDING_RUN | ⏳ PENDING_RUN |
-| mbert | en | ⏳ PENDING_RUN | ⏳ PENDING_RUN | ⏳ PENDING_RUN | ⏳ PENDING_RUN | ⏳ PENDING_RUN | ⏳ PENDING_RUN | ⏳ PENDING_RUN |
-| distilmbert | ar | ⏳ PENDING_RUN | ⏳ PENDING_RUN | ⏳ PENDING_RUN | ⏳ PENDING_RUN | ⏳ PENDING_RUN | ⏳ PENDING_RUN | ⏳ PENDING_RUN |
-| distilmbert | en | ⏳ PENDING_RUN | ⏳ PENDING_RUN | ⏳ PENDING_RUN | ⏳ PENDING_RUN | ⏳ PENDING_RUN | ⏳ PENDING_RUN | ⏳ PENDING_RUN |
+| mbert | ar | 44 | 2.42 | 18.0 | 22 | 16% | 0% | 0% |
+| mbert | en | 26 | 1.10 | 11.0 | 12 | 0% | 0% | 0% |
+| distilmbert | ar | 44 | 2.42 | 18.0 | 22 | 16% | 0% | 0% |
+| distilmbert | en | 26 | 1.10 | 11.0 | 12 | 0% | 0% | 0% |
 
-- QA (سؤال + سياق): أطول زوج = ⏳ PENDING_RUN رمزًا، ونسبة القطع عند 96 = ⏳ PENDING_RUN.
+- QA (سؤال + سياق): أطول زوج = 41 رمزًا، ونسبة القطع عند 96 = 0%.
 - في [دفتر 03](notebooks/03_text_classification.ipynb) أعدت القياس على train+validation بمرمّز النموذج نفسه، فكانت p95 = 15.0 والأقصى = 16.
 
 ### Options considered | البدائل
@@ -56,8 +56,8 @@
 
 ### Decision | القرار
 - المرمّز: `distilbert/distilbert-base-multilingual-cased` (مطابق للنموذج).
-- `MAX_LENGTH = 16` للتصنيف (smallest candidate with truncation <= 0.0)، وقد اقترح دفتر 01 القيمة ⏳ PENDING_RUN على كل نصوص المشروع. تُستخدم القيمة نفسها في الخدمة (08) عبر `bayan_training_meta.json`.
-- QA: أُبقي `max_length=96` لأن القطع عندها ⏳ PENDING_RUN.
+- `MAX_LENGTH = 16` للتصنيف (smallest candidate with truncation <= 0.0)، وقد اقترح دفتر 01 القيمة 24 على كل نصوص المشروع. تُستخدم القيمة نفسها في الخدمة (08) عبر `bayan_training_meta.json`.
+- QA: أُبقي `max_length=96` لأن القطع عندها 0%.
 
 ### Consequences and rollback
 * الفحص يتكرر آليًا في 03 عند كل تشغيل. إذا ظهر قطع في بيانات جديدة ينتقل الاختيار إلى المرشح التالي.
@@ -75,16 +75,24 @@
 ### Options considered | البدائل
 | Option | Use | Rules | Evidence |
 |---|---|---|---|
-| A — `bayan-prep/1.0.0` محافظ | نسخة النموذج في التصنيف والخدمة | NFC، إزالة التطويل، حجب البريد والجوال، توحيد المسافات؛ ويُحفظ التشكيل والألف والياء | idempotent: ⏳ PENDING_RUN؛ غيّر ⏳ PENDING_RUN نصًا من ⏳ PENDING_RUN |
-| B — CAMeL `search` ⏳ PENDING_RUN | البحث الدلالي (corpus وquery) | ما سبق + إزالة التشكيل + توحيد الألف والألف المقصورة؛ وتبقى التاء المربوطة | الاختبارات الذهبية: ⏳ PENDING_RUN ناجحة ([دفتر 05](notebooks/05_arabic_nlp.ipynb)) + [`tests/test_my_arabic_golden.py`](tests/test_my_arabic_golden.py) |
+| A — `bayan-prep/1.0.0` محافظ | نسخة النموذج في التصنيف والخدمة | NFC، إزالة التطويل، حجب البريد والجوال، توحيد المسافات؛ ويُحفظ التشكيل والألف والياء | idempotent: ✅؛ غيّر 1 نصًا من 70 |
+| B — CAMeL `search` 1.0.0 | البحث الدلالي (corpus وquery) | ما سبق + إزالة التشكيل + توحيد الألف والألف المقصورة؛ وتبقى التاء المربوطة | الاختبارات الذهبية: 9 ناجحة ([دفتر 05](notebooks/05_arabic_nlp.ipynb)) + [`tests/test_my_arabic_golden.py`](tests/test_my_arabic_golden.py) |
 | C — توحيد التاء المربوطة إلى هاء | — | — | مرفوض: يدمج «حالة/حاله» ويغيّر المعنى |
 
 ### Tokenizer evidence per variant ([دفتر 05](notebooks/05_arabic_nlp.ipynb))
 | Tokenizer | Slice | fertility | max tokens |
 |---|---|---:|---:|
+| bert-base-arabic-camelbert-da | Gulf/display | 1.33 | 12 |
+| bert-base-arabic-camelbert-da | Gulf/search_profile | 1.31 | 11 |
+| bert-base-arabic-camelbert-da | MSA/display | 1.14 | 10 |
+| bert-base-arabic-camelbert-da | MSA/search_profile | 1.12 | 10 |
+| distilbert-base-multilingual-cased | Gulf/display | 2.48 | 18 |
+| distilbert-base-multilingual-cased | Gulf/search_profile | 2.35 | 18 |
+| distilbert-base-multilingual-cased | MSA/display | 2.45 | 22 |
+| distilbert-base-multilingual-cased | MSA/search_profile | 2.36 | 18 |
 
 ### Decision | القرار
-أستخدم A لنسخة النموذج، وB للبحث فقط، ويُطبَّق B على corpus وquery معًا. Arabizi يبقى في مسار مستقل بلا تحويل (المرشحون: ⏳ PENDING_RUN).
+أستخدم A لنسخة النموذج، وB للبحث فقط، ويُطبَّق B على corpus وquery معًا. Arabizi يبقى في مسار مستقل بلا تحويل (المرشحون: A-019, A-020).
 
 ### Consequences and rollback
 * نسخة العرض لا تتغير أبدًا. أي تغيير في القواعد يرفع الإصدار ويُعاد بسببه بناء الفهرس.
@@ -101,13 +109,13 @@
 |---|---:|---:|---|
 | topic Macro-F1 | 0.733 | 0.867 | partial_finetune_cpu، epoch 9 |
 | sentiment Macro-F1 (observed labels) | 1.000 | 0.356 | epoch 6، 72 خطوة |
-| NER strict entity F1 (test) | — | ⏳ PENDING_RUN | ⏳ PENDING_RUN خطوة |
-| QA EM / F1 (test) | — | ⏳ PENDING_RUN / ⏳ PENDING_RUN | ⏳ PENDING_RUN خطوة |
+| NER strict entity F1 (test) | — | 0.571 | 48 خطوة |
+| QA EM / F1 (test) | — | 0.000 / 0.000 | 20 خطوة |
 
 ### Decisions | القرارات
 - **رأسان مستقلان** لـtopic وsentiment، لكل منهما label map خاصة، على التقسيم نفسه. أحتفظ بالـbaseline مرجعًا دائمًا.
 - **NER:** يأخذ أول subword وسم الكلمة، وتأخذ الاستمرارات والرموز الخاصة `-100`. التقييم صارم على مستوى الكيان ولكل نوع.
-- **QA:** رفعت خطوات التدريب من 1–3 إلى 20 كي يكون لـEM/F1 معنى. **سياسة عدم الإجابة:** أمتنع إذا كان `null_score − best_span_score > ⏳ PENDING_RUN` (⏳ PENDING_RUN).
+- **QA:** رفعت خطوات التدريب من 1–3 إلى 20 كي يكون لـEM/F1 معنى. **سياسة عدم الإجابة:** أمتنع إذا كان `null_score − best_span_score > 0.0` (default_0.0: validation has no unanswerable questions, so abstention cannot be tuned).
 - **قيد:** في sentiment تنقص validation فئة `positive` وتنقص test فئة `neutral`، لذلك يُحسب Macro-F1 على الفئات الملاحظة فقط.
 
 ### Consequences and rollback
@@ -121,11 +129,11 @@
 
 | Field | Value | Evidence |
 |---|---|---|
-| Encoder | `⏳ PENDING_RUN` (dim ⏳ PENDING_RUN) | [`reports/nb06_retrieval.json`](reports/nb06_retrieval.json) |
-| Normalisation / index | L2 + `⏳ PENDING_RUN` (⏳ PENDING_RUN vectors) | manifest |
-| k | ⏳ PENDING_RUN | — |
-| No-answer threshold | ⏳ PENDING_RUN (validation فقط؛ دقتها ⏳ PENDING_RUN) | test: ⏳ PENDING_RUN |
-| Re-ranker | `⏳ PENDING_RUN`: MRR@3 ⏳ PENDING_RUN → ⏳ PENDING_RUN، وp95 ⏳ PENDING_RUN ms | **⏳ PENDING_RUN** |
+| Encoder | `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` (dim 384) | [`reports/nb06_retrieval.json`](reports/nb06_retrieval.json) |
+| Normalisation / index | L2 + `IndexFlatIP` (24 vectors) | manifest |
+| k | 3 | — |
+| No-answer threshold | 0.459 (validation فقط؛ دقتها 1.000) | test: 1.000 |
+| Re-ranker | `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1`: MRR@3 0.667 → 0.722، وp95 196.7 ms | **ADOPT_FOR_EXPERIMENT** |
 
 الرجوع: أي تغيير في النموذج أو الـprofile أو البيانات يستلزم إعادة بناء الفهرس، لأن الـmanifest يربطها معًا.
 
@@ -136,9 +144,12 @@
 * **Date:** 2026-09-30 · **Gate:** C — Evaluation · **Status:** accepted · **Owner:** Manal Qaysi
 
 - **المقاييس:** Macro-F1 للتصنيف (يعطي الفئات وزنًا متساويًا)، وstrict entity F1 لـNER، وEM/F1 ودقة عدم الإجابة لـQA، وRecall@3/MRR@3 ودقة no-answer للبحث.
-- **عدم اليقين:** 95% bootstrap CI (2000 إعادة)، ومقارنة زوجية. لا أدّعي اتجاهًا ما لم تستبعد الفترة الصفر. Topic: الفرق ⏳ PENDING_RUN، والفترة [⏳ PENDING_RUN, ⏳ PENDING_RUN].
+- **عدم اليقين:** 95% bootstrap CI (2000 إعادة)، ومقارنة زوجية. لا أدّعي اتجاهًا ما لم تستبعد الفترة الصفر. Topic: الفرق +0.133، والفترة [-0.386, +0.675].
 - **الشرائح:** اللغة (ar/en). أي شريحة n<10 تُوسم `SMALL_SLICE`.
-- **أولويات الإصلاح** (من تصنيف أخطاء نماذجي في [دفتر 07](notebooks/07_evaluation_error_analysis.ipynb)، ومراجعته اليدوية: ⏳ PENDING_RUN):
+- **أولويات الإصلاح** (من تصنيف أخطاء نماذجي في [دفتر 07](notebooks/07_evaluation_error_analysis.ipynb)، ومراجعته اليدوية: ❌):
+  1. `class_confusion` — إضافة أمثلة contrastive للزوج المختلط ومراجعة دليل التسميات (دليل: 3 observed: D-027:sentiment, D-037:sentiment, D-038:sentiment)
+  2. `entity_boundary` — توسيع أمثلة الكيانات متعددة الكلمات ومراجعة محاذاة I- للكلمات اللاحقة (دليل: 3 observed: NER-val-0, Q-007, Q-008)
+  3. `dialect_gap` — إضافة أمثلة خليجية مراجَعة لكل فئة في train (≥5 لكل فئة) وإعادة التدريب (دليل: not observed in this run; known risk from slices/data card)
 
 ---
 
@@ -190,10 +201,10 @@
 
 ## Decision D-010 — Measured extension: hybrid sparse + dense retrieval (RRF)
 
-* **Date:** 2026-09-30 · **Gate:** T7 — Extension · **Status:** ⏳ PENDING_RUN · **Owner:** Manal Qaysi
+* **Date:** 2026-09-30 · **Gate:** T7 — Extension · **Status:** REJECT · **Owner:** Manal Qaysi
 
 * **Rule written before measuring:** أعتمده إذا تحققت ثلاثة شروط: ربح في MRR@3 على validation ≥ 0.05، وعدم انخفاض Recall@3 عبر اللغات، وزمن وسيط إضافي ≤ 5 ms.
-* **Measured:** الربح ⏳ PENDING_RUN؛ عدم انخفاض Recall@3 عبر اللغات: ⏳ PENDING_RUN؛ الزمن الإضافي ⏳ PENDING_RUN ms. → **⏳ PENDING_RUN**.
+* **Measured:** الربح -0.167؛ عدم انخفاض Recall@3 عبر اللغات: ❌؛ الزمن الإضافي 1.11 ms. → **REJECT**.
 * **Evidence:** [`reports/nb06_extension.json`](reports/nb06_extension.json).
 * **Rollback:** الـbaseline (dense فقط) هو الافتراضي، والامتداد لا يغيّر الفهرس ولا العتبة.
 
