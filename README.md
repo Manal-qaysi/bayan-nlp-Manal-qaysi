@@ -35,14 +35,14 @@
 
 | # | Notebook | Colab | Purpose | Result saved |
 |---:|---|---|---|---|
-| 00 | [`00_runtime_doctor.ipynb`](notebooks/00_runtime_doctor.ipynb) | [Open in Colab](https://colab.research.google.com/github/Manal-qaysi/bayan-nlp-Manal-qaysi/blob/main/notebooks/00_runtime_doctor.ipynb) | runtime doctor (environment) | ⏳ PENDING_RUN |
-| 01 | [`01_text_processing_tokenization.ipynb`](notebooks/01_text_processing_tokenization.ipynb) | [Open in Colab](https://colab.research.google.com/github/Manal-qaysi/bayan-nlp-Manal-qaysi/blob/main/notebooks/01_text_processing_tokenization.ipynb) | text processing / tokenisation (Gate A · T1) | ⏳ PENDING_RUN |
-| 02 | [`02_attention_transformers.ipynb`](notebooks/02_attention_transformers.ipynb) | [Open in Colab](https://colab.research.google.com/github/Manal-qaysi/bayan-nlp-Manal-qaysi/blob/main/notebooks/02_attention_transformers.ipynb) | attention / transformers (T2) | ⏳ PENDING_RUN |
+| 00 | [`00_runtime_doctor.ipynb`](notebooks/00_runtime_doctor.ipynb) | [Open in Colab](https://colab.research.google.com/github/Manal-qaysi/bayan-nlp-Manal-qaysi/blob/main/notebooks/00_runtime_doctor.ipynb) | runtime doctor (environment) | ✅ `nb00_runtime` |
+| 01 | [`01_text_processing_tokenization.ipynb`](notebooks/01_text_processing_tokenization.ipynb) | [Open in Colab](https://colab.research.google.com/github/Manal-qaysi/bayan-nlp-Manal-qaysi/blob/main/notebooks/01_text_processing_tokenization.ipynb) | text processing / tokenisation (Gate A · T1) | ✅ `nb01_tokenization` |
+| 02 | [`02_attention_transformers.ipynb`](notebooks/02_attention_transformers.ipynb) | [Open in Colab](https://colab.research.google.com/github/Manal-qaysi/bayan-nlp-Manal-qaysi/blob/main/notebooks/02_attention_transformers.ipynb) | attention / transformers (T2) | ✅ `nb02_attention` |
 | 03 | [`03_text_classification.ipynb`](notebooks/03_text_classification.ipynb) | [Open in Colab](https://colab.research.google.com/github/Manal-qaysi/bayan-nlp-Manal-qaysi/blob/main/notebooks/03_text_classification.ipynb) | topic + sentiment classification (Gate B · T3) | ✅ `nb03_classification` |
-| 04 | [`04_ner_and_qa.ipynb`](notebooks/04_ner_and_qa.ipynb) | [Open in Colab](https://colab.research.google.com/github/Manal-qaysi/bayan-nlp-Manal-qaysi/blob/main/notebooks/04_ner_and_qa.ipynb) | NER and extractive QA (Gate B · T3) | ⏳ PENDING_RUN |
-| 05 | [`05_arabic_nlp.ipynb`](notebooks/05_arabic_nlp.ipynb) | [Open in Colab](https://colab.research.google.com/github/Manal-qaysi/bayan-nlp-Manal-qaysi/blob/main/notebooks/05_arabic_nlp.ipynb) | Arabic NLP (CAMeL profile) (Gate C · T1) | ⏳ PENDING_RUN |
-| 06 | [`06_semantic_search.ipynb`](notebooks/06_semantic_search.ipynb) | [Open in Colab](https://colab.research.google.com/github/Manal-qaysi/bayan-nlp-Manal-qaysi/blob/main/notebooks/06_semantic_search.ipynb) | semantic search + extension (Gate C · T4/T7) | ⏳ PENDING_RUN |
-| 07 | [`07_evaluation_error_analysis.ipynb`](notebooks/07_evaluation_error_analysis.ipynb) | [Open in Colab](https://colab.research.google.com/github/Manal-qaysi/bayan-nlp-Manal-qaysi/blob/main/notebooks/07_evaluation_error_analysis.ipynb) | evaluation / error analysis (Gate C · T5) | ⏳ PENDING_RUN |
+| 04 | [`04_ner_and_qa.ipynb`](notebooks/04_ner_and_qa.ipynb) | [Open in Colab](https://colab.research.google.com/github/Manal-qaysi/bayan-nlp-Manal-qaysi/blob/main/notebooks/04_ner_and_qa.ipynb) | NER and extractive QA (Gate B · T3) | ✅ `nb04_ner_qa` |
+| 05 | [`05_arabic_nlp.ipynb`](notebooks/05_arabic_nlp.ipynb) | [Open in Colab](https://colab.research.google.com/github/Manal-qaysi/bayan-nlp-Manal-qaysi/blob/main/notebooks/05_arabic_nlp.ipynb) | Arabic NLP (CAMeL profile) (Gate C · T1) | ✅ `nb05_arabic` |
+| 06 | [`06_semantic_search.ipynb`](notebooks/06_semantic_search.ipynb) | [Open in Colab](https://colab.research.google.com/github/Manal-qaysi/bayan-nlp-Manal-qaysi/blob/main/notebooks/06_semantic_search.ipynb) | semantic search + extension (Gate C · T4/T7) | ✅ `nb06_retrieval` |
+| 07 | [`07_evaluation_error_analysis.ipynb`](notebooks/07_evaluation_error_analysis.ipynb) | [Open in Colab](https://colab.research.google.com/github/Manal-qaysi/bayan-nlp-Manal-qaysi/blob/main/notebooks/07_evaluation_error_analysis.ipynb) | evaluation / error analysis (Gate C · T5) | ✅ `nb07_evaluation` |
 | 08 | [`08_optimization_serving.ipynb`](notebooks/08_optimization_serving.ipynb) | [Open in Colab](https://colab.research.google.com/github/Manal-qaysi/bayan-nlp-Manal-qaysi/blob/main/notebooks/08_optimization_serving.ipynb) | optimisation / serving (Gate D · T6) | ✅ `nb08_benchmark` |
 
 **خطوات التشغيل النظيف (الترتيب مهم):**
@@ -90,9 +90,9 @@ flowchart LR
 
 1. يقسّم المرمّز النص إلى subwords.
 2. يُضاف إلى كل رمز embedding للموضع، لأن الانتباه وحده لا يعرف ترتيب الكلمات.
-3. تمر المتجهات على ⏳ PENDING_RUN طبقات encoder. في كل طبقة: multi-head self-attention بـ⏳ PENDING_RUN رأسًا، ثم residual وLayerNorm، ثم شبكة feed-forward لكل موضع، ثم residual وLayerNorm مرة أخرى.
-4. في كل رأس تُسقَط الحالة المخفية إلى Q وK وV بالشكل `⏳ PENDING_RUN` (batch, heads, T, d_head=⏳ PENDING_RUN). ثم softmax(QKᵀ/√d_k + mask)·V.
-5. قناع الحشو يعطي مفاتيح `[PAD]` وزنًا صفريًا. أعلى وزن قسته على `[PAD]` في كل الطبقات والرؤوس = `⏳ PENDING_RUN`.
+3. تمر المتجهات على 6 طبقات encoder. في كل طبقة: multi-head self-attention بـ12 رأسًا، ثم residual وLayerNorm، ثم شبكة feed-forward لكل موضع، ثم residual وLayerNorm مرة أخرى.
+4. في كل رأس تُسقَط الحالة المخفية إلى Q وK وV بالشكل `[2, 12, 22, 64]` (batch, heads, T, d_head=64). ثم softmax(QKᵀ/√d_k + mask)·V.
+5. قناع الحشو يعطي مفاتيح `[PAD]` وزنًا صفريًا. أعلى وزن قسته على `[PAD]` في كل الطبقات والرؤوس = `0.0`.
 6. التصنيف يقرأ تمثيل `[CLS]`، وNER يقرأ تمثيل كل رمز، وQA يقرأ رأسين للبداية والنهاية على رموز السياق فقط.
 
 **حدود التفسير:** خريطة الانتباه **وصف** لما حسبه رأس معيّن، وليست **تفسيرًا سببيًا** لقرار النموذج. أولًا، الأوزان تُمزج بعدها مع V، ثم تمر بـresiduals وFFN وطبقات أخرى. ثانيًا، الرؤوس متعددة ومتكررة. ثالثًا، الوزن العالي لا يعني أن حذف الرمز سيغيّر التنبؤ. لذلك لا أستخدم heatmap واحدة دليلًا، وأي ادعاء سببي يحتاج تجربة حذف أو استبدال مع قياس أثرها.
@@ -105,28 +105,28 @@ flowchart LR
 |---|---|---:|---|---|
 | topic classification | Macro-F1 (Transformer / baseline) | 0.867 / 0.733 · `MEASURED_SMOKE` | frozen test, n=8 | [nb03](reports/nb03_classification.json) · [CI](reports/nb07_evaluation.json) |
 | sentiment classification | Macro-F1 over observed labels (Transformer / baseline) | 0.356 / 1.000 · `MEASURED_SMOKE` | frozen test, n=8 | [nb03](reports/nb03_classification.json) |
-| NER | strict entity F1 | ⏳ PENDING_RUN · `MEASURED_SMOKE` | test, ⏳ PENDING_RUN gold entities | [nb04](reports/nb04_ner_qa.json) |
-| QA | EM / F1 / no-answer acc. | ⏳ PENDING_RUN / ⏳ PENDING_RUN / ⏳ PENDING_RUN · `MEASURED_SMOKE` | test, n=⏳ PENDING_RUN | [nb04](reports/nb04_ner_qa.json) |
-| search | Recall@3 / MRR@3 (dense) | ⏳ PENDING_RUN / ⏳ PENDING_RUN · `MEASURED_SMOKE` | test, ⏳ PENDING_RUN answerable queries | [nb06](reports/nb06_retrieval.json) |
-| search no-answer | accuracy with frozen threshold | ⏳ PENDING_RUN · `MEASURED_SMOKE` | test | [nb06](reports/nb06_retrieval.json) |
+| NER | strict entity F1 | 0.571 · `MEASURED_SMOKE` | test, 4 gold entities | [nb04](reports/nb04_ner_qa.json) |
+| QA | EM / F1 / no-answer acc. | 0.000 / 0.000 / 0.000 · `MEASURED_SMOKE` | test, n=2 | [nb04](reports/nb04_ner_qa.json) |
+| search | Recall@3 / MRR@3 (dense) | 1.000 / 0.667 · `MEASURED_SMOKE` | test, 6 answerable queries | [nb06](reports/nb06_retrieval.json) |
+| search no-answer | accuracy with frozen threshold | 1.000 · `MEASURED_SMOKE` | test | [nb06](reports/nb06_retrieval.json) |
 | serving | p95 ms / items/s / quality tax (selected: `pytorch-fp32`) | PyTorch 366.9 ms · ONNX 277.4 ms · `MEASURED` | validation workload, n=8, CPU | [`BENCHMARKS.md`](BENCHMARKS.md) |
 
-**الدقة الإحصائية:** Macro-F1 لرأس topic على test مع 95% bootstrap CI هو ⏳ PENDING_RUN، والفرق الزوجي Transformer − baseline هو ⏳ PENDING_RUN. هل يدعم الفرق ادعاءً اتجاهيًا؟ **⏳ PENDING_RUN**. التفاصيل في [`EVALUATION_REPORT.md`](EVALUATION_REPORT.md).
+**الدقة الإحصائية:** Macro-F1 لرأس topic على test مع 95% bootstrap CI هو 0.867 [0.523, 1.000]، والفرق الزوجي Transformer − baseline هو +0.133. هل يدعم الفرق ادعاءً اتجاهيًا؟ **❌**. التفاصيل في [`EVALUATION_REPORT.md`](EVALUATION_REPORT.md).
 
 ## Error found and decision | خطأ وقرار
 
-- **Observed failure | الخطأ الملاحظ:** الفئة الأكثر تكرارًا بين أخطاء نماذجي هي `⏳ PENDING_RUN` (⏳ PENDING_RUN أخطاء، مثل ⏳ PENDING_RUN). مثال: «⏳ PENDING_RUN».
-- **Slice / taxonomy:** المهام: ⏳ PENDING_RUN؛ الجدول الكامل في [`EVALUATION_REPORT.md`](EVALUATION_REPORT.md) §7.
-- **Fix or deferred action | الإصلاح:** ⏳ PENDING_RUN. **مقياس القبول:** ⏳ PENDING_RUN.
-- **Evidence after change | الدليل بعد التغيير:** لم يُنفَّذ الإصلاح في هذه النسخة (**deferred**) لأن تنفيذه يحتاج بيانات جديدة. اختبار عدم الرجوع المقترح: ⏳ PENDING_RUN.
+- **Observed failure | الخطأ الملاحظ:** الفئة الأكثر تكرارًا بين أخطاء نماذجي هي `class_confusion` (3 أخطاء، مثل D-027:sentiment, D-037:sentiment, D-038:sentiment). مثال: «أين أجد نتيجة الموعد الطبي».
+- **Slice / taxonomy:** المهام: sentiment_classification؛ الجدول الكامل في [`EVALUATION_REPORT.md`](EVALUATION_REPORT.md) §7.
+- **Fix or deferred action | الإصلاح:** إضافة أمثلة contrastive للزوج المختلط ومراجعة دليل التسميات. **مقياس القبول:** macro-F1 للفئتين المختلطتين.
+- **Evidence after change | الدليل بعد التغيير:** لم يُنفَّذ الإصلاح في هذه النسخة (**deferred**) لأن تنفيذه يحتاج بيانات جديدة. اختبار عدم الرجوع المقترح: paired bootstrap دون تراجع في بقية الشرائح.
 
 ## Measured extension | الامتداد المقاس
 
 - **Extension chosen:** بحث هجين sparse (TF-IDF حرفي) + dense (FAISS) بدمج Reciprocal Rank Fusion (`k=60`).
-- **Baseline:** البحث الكثيف وحده بـ`⏳ PENDING_RUN` + `IndexFlatIP`.
-- **Benefit/cost metric:** MRR@3 على validation: dense ⏳ PENDING_RUN ← hybrid ⏳ PENDING_RUN (الفرق ⏳ PENDING_RUN). Recall@3 عبر اللغات لم ينخفض: ⏳ PENDING_RUN. الكلفة الزمنية الإضافية: ⏳ PENDING_RUN ms للاستعلام (الزمن الوسيط). على test: MRR@3 dense ⏳ PENDING_RUN مقابل hybrid ⏳ PENDING_RUN.
+- **Baseline:** البحث الكثيف وحده بـ`sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` + `IndexFlatIP`.
+- **Benefit/cost metric:** MRR@3 على validation: dense 0.833 ← hybrid 0.667 (الفرق -0.167). Recall@3 عبر اللغات لم ينخفض: ❌. الكلفة الزمنية الإضافية: 1.11 ms للاستعلام (الزمن الوسيط). على test: MRR@3 dense 0.667 مقابل hybrid 0.667.
 - **Evidence path:** [`reports/nb06_extension.json`](reports/nb06_extension.json)، ومصدره [دفتر 06](notebooks/06_semantic_search.ipynb) (قسم «🟣 الامتداد المقاس»).
-- **Decision and limitation:** **⏳ PENDING_RUN** وفق قاعدة كُتبت قبل القياس (ربح ≥ 0.05 في MRR@3، وعدم تراجع Recall عبر اللغات، و≤ 5 ms إضافية). القيد: 10 استعلامات validation و8 test فقط.
+- **Decision and limitation:** **REJECT** وفق قاعدة كُتبت قبل القياس (ربح ≥ 0.05 في MRR@3، وعدم تراجع Recall عبر اللغات، و≤ 5 ms إضافية). القيد: 10 استعلامات validation و8 test فقط.
 
 ## Repository evidence | حزمة الأدلة
 
@@ -181,7 +181,7 @@ with Transformers (SDA-AIE-211) in the SDAIA Academy training context.
 
 Academy | الأكاديمية: [SDAIA Academy](https://github.com/SDAIAAcademy)<br>
 Trainer | المدربة: Meaad Al-Marri — ميعاد المري<br>
-Course source | مصدر الدورة: [https://github.com/almiyead-rgb/bayan-applied-nlp-course](https://github.com/SDAIAAcademy)<br>
+Course source | مصدر الدورة: https://github.com/almiyead-rgb/bayan-applied-nlp-course<br>
 #SDAIAAcademy
 
 This attribution does not claim Academy endorsement or ownership of third-party assets.
