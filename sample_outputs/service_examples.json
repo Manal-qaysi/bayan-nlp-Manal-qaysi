@@ -1,0 +1,24 @@
+{
+  "source": "notebooks/08_optimization_serving.ipynb (FastAPI TestClient, synthetic inputs)",
+  "arabic_request": {
+    "text": "الخدمة واضحة",
+    "language": "ar"
+  },
+  "arabic_prediction": {
+    "confidence": 0.801291823387146,
+    "label": "health"
+  },
+  "english_request": {
+    "text": "The service is clear",
+    "language": "en"
+  },
+  "english_prediction": {
+    "confidence": 0.5702272653579712,
+    "label": "health"
+  },
+  "rejected_inputs": {
+    "empty_rejected": 422,
+    "unsupported_language_rejected": 422,
+    "too_long_rejected": 422
+  }
+}
